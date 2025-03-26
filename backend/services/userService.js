@@ -1,4 +1,3 @@
-import { getSession } from "../db.js";
 import bcrypt from "bcrypt";
 
 // 🚀 Funktion: Alle User abrufen
