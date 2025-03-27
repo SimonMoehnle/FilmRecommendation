@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 // 🚀 Funktion: Alle User abrufen
 export async function getAllUsers() {
