@@ -182,3 +182,42 @@ export async function deleteAllMovies() {
   }
 }
 
+export async function getMoviesByGenre(genre) {
+  const session = driver.session();
+  try {
+    console.log("Genre-Filter:", genre); // <-- DEBUG
+
+    const result = await session.run(
+      `
+      MATCH (m:Movie {genre: $genre})
+      RETURN m
+      `,
+      { genre }
+    );
+
+    console.log("Anzahl gefundener Filme:", result.records.length); // <-- DEBUG
+
+    return result.records.map(record => {
+      const props = record.get("m").properties;
+
+      return {
+        movieId: props.movieId?.low ?? props.movieId,
+        title: props.title,
+        genre: props.genre,
+        description: props.description,
+        releaseYear: props.releaseYear?.low ?? props.releaseYear,
+        averageRating: props.averageRating,
+        ratingCount: props.ratingCount?.low ?? props.ratingCount
+      };
+    });
+
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Filme nach Genre:", error);
+    throw error;
+  } finally {
+    await session.close();
+  }
+}
+
+
+

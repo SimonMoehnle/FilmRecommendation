@@ -46,4 +46,20 @@ export default async function userRoutes(fastify, options) {
             return reply.status(500).send({ error: "Datenbankfehler", details: error.message });
         }
     });
+
+    // GET /profile/:userId – Benutzerprofil anzeigen (inkl. Bewertungen)
+    fastify.get("/profile/:userId", async (request, reply) => {
+        const { userId } = request.params;
+        try {
+        const profile = await getUserProfile(userId);
+        return reply.send(profile);
+        } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+            error: "Fehler beim Laden des Benutzerprofils",
+            details: error.message
+        });
+        }
+    });
+  
 }
