@@ -87,3 +87,49 @@ export async function deleteUser(userId) {
         await session.close();
     }
 }
+
+// 🚀 Funktion: Benutzerprofil mit Bewertungen abrufen
+export async function getUserProfile(userId) {
+    const session = getSession();
+    try {
+        const result = await session.run(
+            `
+            MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie)
+            RETURN m {
+              .movieId, .title, .genre, .description, .releaseYear, .averageRating, .ratingCount
+            } AS movie,
+            r.score AS score,
+            r.review AS review,
+            r.ratedAt AS ratedAt
+            `,
+            { userId }
+        );
+
+        const ratedMovies = result.records.map(record => {
+            const movie = record.get("movie");
+            return {
+                movieId: movie.movieId?.low ?? movie.movieId,
+                title: movie.title,
+                genre: movie.genre,
+                description: movie.description,
+                releaseYear: movie.releaseYear?.low ?? movie.releaseYear,
+                averageRating: movie.averageRating,
+                ratingCount: movie.ratingCount?.low ?? movie.ratingCount,
+                score: record.get("score")?.low ?? record.get("score"),
+                review: record.get("review"),
+                ratedAt: record.get("ratedAt")
+            };
+        });
+
+        return {
+            userId,
+            ratedMovies
+        };
+    } catch (error) {
+        console.error("Fehler beim Abrufen des Benutzerprofils:", error);
+        throw error;
+    } finally {
+        await session.close();
+    }
+}
+

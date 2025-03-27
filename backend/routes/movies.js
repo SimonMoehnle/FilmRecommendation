@@ -4,7 +4,8 @@ import {
     createMovie,
     updateMovie,
     deleteMovie,
-    deleteAllMovies
+    deleteAllMovies,
+    getMoviesByGenre
   } from "../services/movieService.js";
 
 import { createMovieSchema } from "../schema/movie-schema.js";
@@ -41,8 +42,23 @@ import { createMovieSchema } from "../schema/movie-schema.js";
         });
       }
     });
+
+    // Route: Filme nach Genre abrufen
+    fastify.get("/movies/genre/:genre", async (request, reply) => {
+      const { genre } = request.params;
+      try {
+        const movies = await getMoviesByGenre(genre);
+        return reply.send({ movies });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          error: "Database error",
+          details: error.message
+        });
+      }
+    });
+
     
-  
     // Route: Neuen Film erstellen
     fastify.post("/movies", {schema: createMovieSchema}, async (request, reply) => {
       const { title, genre, description, releaseYear } = request.body;

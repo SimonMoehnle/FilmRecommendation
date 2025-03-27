@@ -7,12 +7,14 @@ import ratingRoutes from "./routes/ratings.js";
 const fastify = Fastify({ logger: true });
 
 // ✅ CORS aktivieren und nur Zugriff von Frontend auf Port 4000 erlauben
+
 fastify.register(cors, {
-    origin: "http://localhost:4000", // Nur Anfragen von Frontend auf Port 4000 erlauben
-    methods: ["GET", "POST", "PUT", "DELETE"], // Erlaubt diese Methoden
-    allowedHeaders: ["Content-Type", "Authorization"], // Erlaubt bestimmte Header
-    credentials: true, // Falls du Cookies oder Authentifizierung nutzt
+  origin: "http://localhost:3000", // Erlaubt Frontend auf Port 3000
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 });
+
 
 // ✅ User-Routen registrieren
 fastify.register(userRoutes);
