@@ -1,8 +1,8 @@
-import { getSession } from "../db.js";
+import { driver } from "../db.js";
 
 // Funktion: Alle Filme abrufen
 export async function getAllMovies() {
-  const session = getSession();
+  const session = driver.session();
   try {
     const result = await session.run("MATCH (m:Movie) RETURN m");
     return result.records.map(record => record.get("m").properties);
@@ -16,7 +16,7 @@ export async function getAllMovies() {
 
 // Funktion: Einen Film anhand der movieId abrufen
 export async function getMovieById(movieId) {
-  const session = getSession();
+  const session = driver.session();
   try {
     const result = await session.run(
       "MATCH (m:Movie {movieId: $movieId}) RETURN m",
@@ -36,7 +36,7 @@ export async function getMovieById(movieId) {
 
 // Funktion: Einen neuen Film erstellen
 export async function createMovie(title, description, releaseYear) {
-  const session = getSession();
+  const session = driver.session();
   try {
     // Counter verwenden, um eine eindeutige movieId zu generieren (analog zur User-Erstellung)
     const result = await session.run(
@@ -73,7 +73,7 @@ export async function createMovie(title, description, releaseYear) {
 
 // Funktion: Einen bestehenden Film aktualisieren
 export async function updateMovie(movieId, title, description, releaseYear) {
-  const session = getSession();
+  const session = driver.session();
   try {
     const result = await session.run(
       `
@@ -103,7 +103,7 @@ export async function updateMovie(movieId, title, description, releaseYear) {
 
 // Funktion: Einen Film löschen
 export async function deleteMovie(movieId) {
-  const session = getSession();
+  const session = driver.session();
   try {
     // Existenz prüfen
     const movieExists = await session.run(
