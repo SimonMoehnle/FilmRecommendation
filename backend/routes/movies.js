@@ -3,8 +3,11 @@ import {
     getMovieById,
     createMovie,
     updateMovie,
-    deleteMovie
+    deleteMovie,
+    deleteAllMovies
   } from "../services/movieService.js";
+
+import { createMovieSchema } from "../schema/movie-schema.js";
   
   export default async function movieRoutes(fastify, options) {
     // Route: Alle Filme abrufen
@@ -23,7 +26,7 @@ import {
   
     // Route: Einzelnen Film anhand der movieId abrufen
     fastify.get("/movies/:movieId", async (request, reply) => {
-      const { movieId } = request.params;
+      const movieId = parseInt(request.params.movieId, 10); // <<< wichtig!
       try {
         const movie = await getMovieById(movieId);
         if (!movie) {
@@ -38,17 +41,18 @@ import {
         });
       }
     });
+    
   
     // Route: Neuen Film erstellen
-    fastify.post("/movies", async (request, reply) => {
-      const { title, description, releaseYear } = request.body;
+    fastify.post("/movies", {schema: createMovieSchema}, async (request, reply) => {
+      const { title, genre, description, releaseYear } = request.body;
       if (!title || !description || !releaseYear) {
         return reply.status(400).send({
           error: "Title, Beschreibung und Erscheinungsjahr sind erforderlich!"
         });
       }
       try {
-        const result = await createMovie(title, description, releaseYear);
+        const result = await createMovie(title, genre, description, releaseYear);
         return reply.status(201).send(result);
       } catch (error) {
         request.log.error(error);
@@ -91,6 +95,20 @@ import {
         if (result.error) {
           return reply.status(404).send(result);
         }
+        return reply.status(200).send(result);
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          error: "Database error",
+          details: error.message
+        });
+      }
+    });
+
+    // Route: Alle Filme löschen
+    fastify.delete("/deleteAllMovies", async (request, reply) => {
+      try {
+        const result = await deleteAllMovies();
         return reply.status(200).send(result);
       } catch (error) {
         request.log.error(error);

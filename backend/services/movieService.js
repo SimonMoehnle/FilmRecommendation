@@ -5,7 +5,21 @@ export async function getAllMovies() {
   const session = driver.session();
   try {
     const result = await session.run("MATCH (m:Movie) RETURN m");
-    return result.records.map(record => record.get("m").properties);
+
+    return result.records.map(record => {
+      const props = record.get("m").properties;
+
+      return {
+        movieId: props.movieId?.low ?? props.movieId,
+        title: props.title,
+        genre: props.genre,
+        description: props.description,
+        releaseYear: props.releaseYear?.low ?? props.releaseYear,
+        averageRating: props.averageRating,
+        ratingCount: props.ratingCount?.low ?? props.ratingCount
+      };
+    });
+
   } catch (error) {
     console.error("Fehler beim Abrufen der Filme:", error);
     throw error;
@@ -13,6 +27,7 @@ export async function getAllMovies() {
     await session.close();
   }
 }
+
 
 // Funktion: Einen Film anhand der movieId abrufen
 export async function getMovieById(movieId) {
@@ -25,7 +40,18 @@ export async function getMovieById(movieId) {
     if (result.records.length === 0) {
       return null;
     }
-    return result.records[0].get("m").properties;
+
+    const raw = result.records[0].get("m").properties;
+
+    return {
+      movieId: raw.movieId?.low ?? raw.movieId,
+      title: raw.title,
+      genre: raw.genre,
+      description: raw.description,
+      releaseYear: raw.releaseYear?.low ?? raw.releaseYear,
+      averageRating: raw.averageRating,
+      ratingCount: raw.ratingCount?.low ?? raw.ratingCount
+    };
   } catch (error) {
     console.error("Fehler beim Abrufen des Films:", error);
     throw error;
@@ -34,34 +60,46 @@ export async function getMovieById(movieId) {
   }
 }
 
+
 // Funktion: Einen neuen Film erstellen
-export async function createMovie(title, description, releaseYear) {
+export async function createMovie(title, genre, description, releaseYear) {
   const session = driver.session();
   try {
-    // Counter verwenden, um eine eindeutige movieId zu generieren (analog zur User-Erstellung)
     const result = await session.run(
       `
       MERGE (counter:Counter {id: "movieId"}) 
       ON CREATE SET counter.value = 1 
       ON MATCH SET counter.value = counter.value + 1 
-      WITH counter.value AS newId
+      WITH counter.value AS movieId
       CREATE (m:Movie {
-        movieId: "M" + newId, 
-        title: $title, 
+        movieId: movieId, 
+        title: $title,
+        genre: $genre, 
         description: $description, 
         releaseYear: toInteger($releaseYear), 
         averageRating: 0.0, 
-        ratingCount: 0, 
-        createdAt: datetime(), 
-        updatedAt: datetime()
+        ratingCount: 0
       })
-      RETURN m.movieId AS movieId
+      RETURN m { .movieId, .title, .description, .genre, .releaseYear, .averageRating, .ratingCount } AS movie
       `,
-      { title, description, releaseYear }
+      { title, genre, description, releaseYear }
     );
+
+    const rawMovie = result.records[0].get("movie");
+
+    const movie = {
+      movieId: rawMovie.movieId?.low ?? rawMovie.movieId,
+      title: rawMovie.title,
+      genre: rawMovie.genre,
+      description: rawMovie.description,
+      releaseYear: rawMovie.releaseYear?.low ?? rawMovie.releaseYear,
+      averageRating: rawMovie.averageRating,
+      ratingCount: rawMovie.ratingCount?.low ?? rawMovie.ratingCount
+    };
+
     return {
       message: "Film erfolgreich erstellt!",
-      movieId: result.records[0].get("movieId")
+      ...movie
     };
   } catch (error) {
     console.error("Fehler beim Erstellen des Films:", error);
@@ -70,6 +108,8 @@ export async function createMovie(title, description, releaseYear) {
     await session.close();
   }
 }
+
+
 
 // Funktion: Einen bestehenden Film aktualisieren
 export async function updateMovie(movieId, title, description, releaseYear) {
@@ -128,3 +168,17 @@ export async function deleteMovie(movieId) {
     await session.close();
   }
 }
+
+export async function deleteAllMovies() {
+  const session = driver.session();
+  try {
+    await session.run("MATCH (m:Movie) DETACH DELETE m");
+    return { message: "Alle Filme wurden erfolgreich gelöscht." };
+  } catch (error) {
+    console.error("Fehler beim Löschen aller Filme:", error);
+    throw error;
+  } finally {
+    await session.close();
+  }
+}
+

@@ -47,14 +47,13 @@ async function createSchema() {
             updatedAt: 'DATETIME'
           },
           Movie: {
-            movieId: 'STRING',
+            movieId: 'INTEGER',
             title: 'STRING',
+            genre: 'STRING',
             description: 'STRING',
             releaseYear: 'INTEGER',
             averageRating: 'FLOAT',
             ratingCount: 'INTEGER',
-            createdAt: 'DATETIME',
-            updatedAt: 'DATETIME'
           },
           Genre: {
             genreName: 'STRING',
