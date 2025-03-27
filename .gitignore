@@ -1,0 +1,13 @@
+# Ignoriere Transaktionen (werden automatisch neu erzeugt)
+neo4j_data/transactions/
+
+# Ignoriere Lock- und ID-Dateien (nicht nötig für Wiederherstellung)
+neo4j_data/store_lock
+neo4j_data/server_id
+
+# Ignoriere versteckte Systemdateien (macOS)
+.DS_Store
+neo4j_data/**/.DS_Store
+
+# OPTIONAL: temporäre Log-Dateien
+neo4j_data/logs/

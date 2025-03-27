@@ -1,9 +1,8 @@
-// ratingService.js
-import { getSession } from "../db.js";
+import { driver } from "../db.js";
 
 // Funktion: Einen Film bewerten (erstellt oder aktualisiert die RATED-Relationship)
 export async function rateMovie(userId, movieId, score, review) {
-  const session = getSession();
+  const session = driver.session();
   try {
     // Prüfen, ob bereits eine Bewertung vorliegt
     const existingResult = await session.run(
@@ -46,7 +45,7 @@ export async function rateMovie(userId, movieId, score, review) {
 
 // Funktion: Eine Bewertung löschen
 export async function deleteRating(userId, movieId) {
-  const session = getSession();
+  const session = driver.session();
   try {
     const result = await session.run(
       `MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie {movieId: $movieId})

@@ -1,8 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import userRoutes from "./routes/users.js"; // Importierte Routen
-import movieRoutes from ".routes/movies.js"
-import ratingRoutes from ".routes/ratings.js"
+import movieRoutes from "./routes/movies.js";
+import ratingRoutes from "./routes/ratings.js";
 
 const fastify = Fastify({ logger: true });
 
@@ -22,7 +22,7 @@ fastify.register(ratingRoutes);
 // ✅ Server starten
 const start = async () => {
     try {
-        await fastify.listen({ port: 3000, host: "0.0.0.0" });
+        await fastify.listen({ port: 4000, host: "0.0.0.0" });
     } catch (error) {
         fastify.log.error(error);
         process.exit(1);
