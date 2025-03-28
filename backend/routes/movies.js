@@ -9,6 +9,7 @@ import {
   } from "../services/movieService.js";
 
 import { createMovieSchema } from "../schema/movie-schema.js";
+import { requireAnyRole } from "../services/authMiddleware.js";
   
   export default async function movieRoutes(fastify, options) {
     // Route: Alle Filme abrufen
@@ -104,13 +105,18 @@ import { createMovieSchema } from "../schema/movie-schema.js";
     });
   
     // Route: Film löschen
-    fastify.delete("/movies/:movieId", async (request, reply) => {
+    fastify.delete("/movies/:movieId", {
+      preHandler: requireAnyRole(["ADMIN"])
+    }, async (request, reply) => {
       const { movieId } = request.params;
+    
       try {
         const result = await deleteMovie(movieId);
+    
         if (result.error) {
           return reply.status(404).send(result);
         }
+    
         return reply.status(200).send(result);
       } catch (error) {
         request.log.error(error);

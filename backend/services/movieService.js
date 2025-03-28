@@ -147,14 +147,14 @@ export async function deleteMovie(movieId) {
   try {
     // Existenz prüfen
     const movieExists = await session.run(
-      "MATCH (m:Movie {movieId: $movieId}) RETURN m",
+      "MATCH (m:Movie {movieId: toInteger($movieId)}) RETURN m",
       { movieId }
     );
     if (movieExists.records.length === 0) {
       return { error: "Film nicht gefunden!" };
     }
     await session.run(
-      "MATCH (m:Movie {movieId: $movieId}) DETACH DELETE m",
+      "MATCH (m:Movie {movieId: toInteger($movieId)}) DETACH DELETE m",
       { movieId }
     );
     return {

@@ -1,18 +1,33 @@
 import bcrypt from "bcryptjs";
+import { getSession } from "../db.js";
+
 
 // 🚀 Funktion: Alle User abrufen
 export async function getAllUsers() {
     const session = getSession();
     try {
-        const result = await session.run("MATCH (u:User) RETURN u");
-        return result.records.map((record) => record.get("u").properties);
+      const result = await session.run("MATCH (u:User) RETURN u");
+  
+      return result.records.map((record) => {
+        const user = record.get("u").properties;
+  
+        return {
+          userId: user.userId?.low ?? user.userId,
+          name: user.name,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          role: user.role,
+          isBlocked: user.isBlocked
+        };
+      });
     } catch (error) {
-        console.error("Fehler beim Abrufen der User:", error);
-        throw error;
+      console.error("Fehler beim Abrufen der User:", error);
+      throw error;
     } finally {
-        await session.close();
+      await session.close();
     }
 }
+  
 
 // 🚀 Funktion: Neuen User erstellen
 export async function registerUser(name, email, password) {
@@ -37,21 +52,23 @@ export async function registerUser(name, email, password) {
             MERGE (counter:Counter {id: "userId"}) 
             ON CREATE SET counter.value = 1 
             ON MATCH SET counter.value = counter.value + 1 
-            WITH counter.value AS newId
+            WITH counter.value AS userId
             CREATE (u:User {
-                userId: "U" + newId, 
+                userId: userId, 
                 name: $name, 
                 email: $email, 
                 passwordHash: $hashedPassword, 
                 role: "USER", 
-                isBlocked: false, 
-                createdAt: datetime(), 
-                updatedAt: datetime()
+                isBlocked: false
             })
             RETURN u.userId AS userId
         `, { name, email, hashedPassword });
-
-        return { message: "User erfolgreich registriert!", userId: result.records[0].get("userId") };
+        
+        const rawUserId = result.records[0].get("userId");
+        return { 
+            message: "User erfolgreich registriert!", 
+            userId: rawUserId?.low ?? rawUserId
+        };
     } catch (error) {
         console.error("Fehler bei der Registrierung:", error);
         throw error;
@@ -65,7 +82,7 @@ export async function deleteUser(userId) {
     try {
         // ✅ 1. Prüfen, ob der User existiert
         const userExists = await session.run(
-            "MATCH (u:User {userId: $userId}) RETURN u",
+            "MATCH (u:User {userId: toInteger($userId)}) RETURN u",
             { userId }
         );
 
@@ -75,7 +92,7 @@ export async function deleteUser(userId) {
 
         // ✅ 2. User mit allen Beziehungen löschen
         await session.run(
-            "MATCH (u:User {userId: $userId}) DETACH DELETE u",
+            "MATCH (u:User {userId: toInteger($userId)}) DETACH DELETE u",
             { userId }
         );
 
