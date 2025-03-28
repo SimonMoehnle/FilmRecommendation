@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import userRoutes from "./routes/users.js"; // Importierte Routen
 import movieRoutes from "./routes/movies.js";
 import ratingRoutes from "./routes/ratings.js";
+import recommendationRoutes from "./routes/recommendationRoutes.js";
 import jwt from "@fastify/jwt";
 import dotenv from "dotenv"; //lädt .env Datei
 dotenv.config(); //lädt .env Datei
@@ -27,6 +28,7 @@ fastify.register(jwt, {
 fastify.register(userRoutes);
 fastify.register(movieRoutes);
 fastify.register(ratingRoutes);
+fastify.register(recommendationRoutes);
 
 // ✅ Server starten
 const start = async () => {

@@ -50,7 +50,7 @@ export async function getMovieById(movieId) {
       genre: raw.genre,
       description: raw.description,
       releaseYear: raw.releaseYear?.low ?? raw.releaseYear,
-      averageRating: raw.averageRating,
+      averageRating: raw.averageRating?.toNumber?.() ?? raw.averageRating,
       ratingCount: raw.ratingCount?.low ?? raw.ratingCount
     };
   } catch (error) {
