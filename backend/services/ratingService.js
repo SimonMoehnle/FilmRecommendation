@@ -1,26 +1,36 @@
 import { driver } from "../db.js";
 
-// Funktion: Einen Film bewerten (erstellt oder aktualisiert die RATED-Relationship)
 export async function rateMovie(userId, movieId, score, review) {
   const session = driver.session();
   try {
-    // Prüfen, ob bereits eine Bewertung vorliegt
+    // Prüfen, ob User und Movie existieren
+    const validationResult = await session.run(
+      `MATCH (u:User {userId: $userId}), (m:Movie {movieId: $movieId})
+       RETURN u, m`,
+      { userId, movieId }
+    );
+
+    if (validationResult.records.length === 0) {
+      return { error: "User oder Film wurde nicht gefunden.", status: 404 };
+    }
+
+    // Prüfen, ob bereits eine Bewertung existiert
     const existingResult = await session.run(
-      "MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie {movieId: $movieId}) RETURN r",
+      `MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie {movieId: $movieId})
+       RETURN r`,
       { userId, movieId }
     );
 
     if (existingResult.records.length > 0) {
-      // Existierende Bewertung aktualisieren
+      // Bewertung aktualisieren
       await session.run(
         `MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie {movieId: $movieId})
          SET r.score = toInteger($score), 
              r.review = $review, 
              r.ratedAt = datetime()
          RETURN r`,
-         { userId, movieId, score, review }
+        { userId, movieId, score, review }
       );
-      return { message: "Bewertung erfolgreich aktualisiert." };
     } else {
       // Neue Bewertung anlegen
       await session.run(
@@ -31,10 +41,24 @@ export async function rateMovie(userId, movieId, score, review) {
            ratedAt: datetime()
          }]->(m)
          RETURN m.movieId AS movieId`,
-         { userId, movieId, score, review }
+        { userId, movieId, score, review }
       );
-      return { message: "Bewertung erfolgreich angelegt." };
     }
+
+    // Durchschnittsbewertung neu berechnen
+    await session.run(
+      `MATCH (:User)-[r:RATED]->(m:Movie {movieId: $movieId})
+       WITH m, avg(r.score) AS newAvg, count(r) AS ratingCount
+       SET m.averageRating = newAvg,
+           m.ratingCount = ratingCount`
+      , { movieId }
+    );
+
+    return {
+      message: existingResult.records.length > 0
+        ? "Bewertung erfolgreich aktualisiert."
+        : "Bewertung erfolgreich angelegt."
+    };
   } catch (error) {
     console.error("Fehler beim Bewerten des Films:", error);
     throw error;
@@ -42,6 +66,8 @@ export async function rateMovie(userId, movieId, score, review) {
     await session.close();
   }
 }
+
+
 
 // Funktion: Eine Bewertung löschen
 export async function deleteRating(userId, movieId) {
