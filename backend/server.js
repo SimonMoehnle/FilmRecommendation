@@ -12,7 +12,7 @@ const fastify = Fastify({ logger: true });
 // ✅ CORS aktivieren und nur Zugriff von Frontend auf Port 4000 erlauben
 
 fastify.register(cors, {
-  origin: "http://localhost:3000", // Erlaubt Frontend auf Port 3000
+  origin: ["http://localhost:3000", "http://localhost:7474"], // Erlaubt Frontend auf Port 3000
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
