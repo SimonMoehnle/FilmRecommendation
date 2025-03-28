@@ -1,3 +1,4 @@
+
 services:
   frontend:
     build: ./frontend
@@ -11,16 +12,6 @@ services:
     build: ./backend
     ports:
       - "4000:4000"
-    depends_on:
-      - neo4j
-
-  neo4j:
-    image: neo4j:4.4-community
-    environment:
-      - NEO4J_AUTH=neo4j/test  # Benutzer: neo4j, Passwort: test
-    ports:
-      - "7474:7474"  # Neo4j Browser (HTTP)
-      - "7687:7687"  # Bolt-Protokoll
-    volumes:
-      - ./neo4j/data:/data  # benanntes Volume statt eines lokalen Ordners
-
+    depends_on: []
+    env_file:
+      - ./backend/.env
