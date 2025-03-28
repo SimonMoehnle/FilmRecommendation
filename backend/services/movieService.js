@@ -1,4 +1,5 @@
 import { driver } from "../db.js";
+import { requireAnyRole } from "./authMiddleware.js";
 
 // Funktion: Alle Filme abrufen
 export async function getAllMovies() {
@@ -117,7 +118,7 @@ export async function updateMovie(movieId, title, description, releaseYear) {
   try {
     const result = await session.run(
       `
-      MATCH (m:Movie {movieId: $movieId})
+      MATCH (m:Movie {movieId: toInteger($movieId)})
       SET m.title = $title, 
           m.description = $description, 
           m.releaseYear = toInteger($releaseYear), 
@@ -218,6 +219,8 @@ export async function getMoviesByGenre(genre) {
     await session.close();
   }
 }
+
+
 
 
 

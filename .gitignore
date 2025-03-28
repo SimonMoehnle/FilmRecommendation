@@ -1,13 +1,21 @@
-# Ignoriere Transaktionen (werden automatisch neu erzeugt)
-neo4j_data/transactions/
+# ────────────────────────────────
+# 🎯 Ziel: Nur relevante Neo4j-Daten versionieren
+# ────────────────────────────────
 
-# Ignoriere Lock- und ID-Dateien (nicht nötig für Wiederherstellung)
-neo4j_data/store_lock
-neo4j_data/server_id
+# ❌ Temporäre Transaktions- und Logdaten (werden beim Start neu erstellt)
+neo4j/data/transactions/
+neo4j/data/logs/
+neo4j/data/debug.log
 
-# Ignoriere versteckte Systemdateien (macOS)
+# ❌ Lock- und ID-Dateien (nicht nötig für Wiederherstellung)
+neo4j/data/store_lock
+neo4j/data/server_id
+neo4j/data/*.id
+
+# ❌ macOS Systemdateien
 .DS_Store
-neo4j_data/**/.DS_Store
+neo4j/**/.DS_Store
 
-# OPTIONAL: temporäre Log-Dateien
-neo4j_data/logs/
+# ✅ Option: Sicherstellen, dass Datenbankdaten selbst nicht ignoriert werden
+# (also: /data/databases/ bleibt erhalten)
+!neo4j/data/databases/
