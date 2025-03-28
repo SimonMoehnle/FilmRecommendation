@@ -35,7 +35,7 @@ export default function GenrePage() {
         setMovies(data.movies);
       } catch (err) {
         console.error("Fehler beim Abrufen der Filme:", err);
-        setError("Filme konnten nicht geladen werden.");
+        setError("Filme konnten nicht gelade werden.");
       }
     };
 
