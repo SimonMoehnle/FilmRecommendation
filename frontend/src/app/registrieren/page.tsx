@@ -3,31 +3,40 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    const res = await fetch("http://localhost:4000/login", {
+  const handleRegister = async () => {
+    const res = await fetch("http://localhost:4000/register/user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ name, email, password }),
     });
 
     const data = await res.json();
 
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-      router.push("/"); // Weiterleitung nach Login
+    if (data.message === "User erfolgreich registriert!") {
+      router.push("/login"); // Weiterleitung zur Login-Seite
     } else {
-      alert(data.error || "Fehler beim Login");
+      setError(data.error || "Fehler bei der Registrierung");
     }
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center gap-6">
-      <h1 className="text-3xl font-bold">Login</h1>
+      <h1 className="text-3xl font-bold">Registrieren</h1>
+      {error && <p className="text-red-500">{error}</p>}
+      <input
+        type="text"
+        placeholder="Name"
+        className="p-2 rounded bg-gray-800 text-white"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <input
         type="email"
         placeholder="E-Mail"
@@ -43,15 +52,17 @@ export default function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button
-        onClick={handleLogin}
+        onClick={handleRegister}
         className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold"
       >
-        Einloggen
+        Registrieren
       </button>
 
       <p className="text-sm mt-4">
-        Noch kein Konto?{" "}
-        <a href="/registrieren" className="text-blue-400 underline">Jetzt registrieren</a>
+        Bereits registriert?{" "}
+        <a href="/login" className="text-blue-400 underline">
+          Jetzt einloggen
+        </a>
       </p>
     </div>
   );
