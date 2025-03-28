@@ -1,4 +1,8 @@
 import { getAllUsers, registerUser, deleteUser } from "../services/userService.js"; // Import der Service-Funktionen
+import bcrypt from "bcryptjs";
+import { getSession } from "../db.js";
+import jwt from "jsonwebtoken";
+
 
 export default async function userRoutes(fastify, options) {
     // GET /users – Alle Nutzer abrufen
@@ -61,5 +65,40 @@ export default async function userRoutes(fastify, options) {
         });
         }
     });
-  
+
+    fastify.post("/login", async (request, reply) => {
+      const { email, password } = request.body;
+      const session = getSession();
+    
+      const result = await session.run("MATCH (u:User {email: $email}) RETURN u", { email });
+    
+      if (result.records.length === 0) {
+        return reply.status(401).send({ error: "Ungültige Anmeldedaten" });
+      }
+    
+      const user = result.records[0].get("u").properties;
+    
+      // ⛔ Check: ist der User gesperrt?
+      if (user.isBlocked === true) {
+        return reply.status(403).send({ error: "Dein Konto wurde gesperrt!" });
+      }
+    
+      // ✅ Passwort prüfen
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return reply.status(401).send({ error: "Falsches Passwort" });
+      }
+    
+      // 🔐 Token generieren
+      const token = jwt.sign(
+        {
+          userId: user.userId?.low ?? user.userId,
+          role: user.role
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+    
+      return reply.send({ message: "Login erfolgreich", token });
+    });
 }

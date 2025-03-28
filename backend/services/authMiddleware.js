@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export function requireRole(requiredRole) {
+export function requireAnyRole(allowedRoles) {
   return async function (request, reply) {
     try {
       const authHeader = request.headers.authorization;
@@ -11,13 +11,14 @@ export function requireRole(requiredRole) {
       const token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      if (decoded.role !== requiredRole) {
+      if (!allowedRoles.includes(decoded.role)) {
         return reply.status(403).send({ error: "Nicht berechtigt" });
       }
 
-      request.user = decoded; // z.B. { userId: 'U1', role: 'ADMIN' }
+      request.user = decoded;
     } catch (err) {
       return reply.status(401).send({ error: "Ungültiger Token" });
     }
   };
 }
+

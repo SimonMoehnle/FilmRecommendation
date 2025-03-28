@@ -3,6 +3,9 @@ import cors from "@fastify/cors";
 import userRoutes from "./routes/users.js"; // Importierte Routen
 import movieRoutes from "./routes/movies.js";
 import ratingRoutes from "./routes/ratings.js";
+import jwt from "@fastify/jwt";
+import dotenv from "dotenv"; //lädt .env Datei
+dotenv.config(); //lädt .env Datei
 
 const fastify = Fastify({ logger: true });
 
@@ -13,6 +16,10 @@ fastify.register(cors, {
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
+});
+
+fastify.register(jwt, {
+    secret: process.env.JWT_SECRET
 });
 
 

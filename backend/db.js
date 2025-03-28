@@ -9,6 +9,10 @@ const password = process.env.NEO4J_PASSWORD || 'test';
 
 const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
 
+function getSession() {
+  return driver.session();
+}
+
 async function createSchema() {
   const session = driver.session();
   try {
@@ -38,13 +42,11 @@ async function createSchema() {
       CALL apoc.schema.assert(
         {
           User: {
-            userId: 'STRING',
+            userId: 'INTEGER',
             email: 'STRING',
             passwordHash: 'STRING',
             role: 'STRING',
-            isBlocked: 'BOOLEAN',
-            createdAt: 'DATETIME',
-            updatedAt: 'DATETIME'
+            isBlocked: 'BOOLEAN'
           },
           Movie: {
             movieId: 'INTEGER',
@@ -53,7 +55,7 @@ async function createSchema() {
             description: 'STRING',
             releaseYear: 'INTEGER',
             averageRating: 'FLOAT',
-            ratingCount: 'INTEGER',
+            ratingCount: 'INTEGER'
           },
           Genre: {
             genreName: 'STRING',
@@ -84,4 +86,4 @@ async function createSchema() {
   }
 }
 
-export { driver, createSchema };
+export { driver, createSchema, getSession };
