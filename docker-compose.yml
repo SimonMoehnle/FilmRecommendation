@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    command: npm run dev
 
   backend:
     build: ./backend
@@ -22,3 +23,4 @@ services:
       - "7687:7687"  # Bolt-Protokoll
     volumes:
       - ./neo4j/data:/data  # benanntes Volume statt eines lokalen Ordners
+
