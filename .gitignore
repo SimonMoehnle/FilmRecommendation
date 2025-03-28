@@ -11,3 +11,5 @@ neo4j_data/**/.DS_Store
 
 # OPTIONAL: temporäre Log-Dateien
 neo4j_data/logs/
+
+neo4j_data/
