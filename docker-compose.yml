@@ -5,7 +5,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend
-    command: npm run build
+    command: npm run start
 
   backend:
     build: ./backend

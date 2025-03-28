@@ -153,9 +153,9 @@ export default function GenrePage() {
                   </p>
                   <p>
                     <span className="font-semibold">Ø Bewertung:</span>{" "}
-                    {movie.averageRating.toFixed(1)} ⭐ ({movie.ratingCount})
+                    {movie.averageRating !== undefined ? movie.averageRating.toFixed(1) : "–"} ⭐
+                    ({movie.ratingCount ?? 0})
                   </p>
-                  <p className="text-xs text-gray-400 mt-2">{movie.description}</p>
                 </CardContent>
               </Card>
             ))}
