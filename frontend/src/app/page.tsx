@@ -38,14 +38,26 @@ export default function GenrePage() {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      setMovies(data.movies);
+  
+      const topRated = data.movies
+        .filter((m: Movie) => typeof m.averageRating === "number")
+        .sort((a: Movie, b: Movie) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+        .slice(0, 4);
+  
+      setMovies(topRated);
     } catch (err) {
       console.error("Fehler beim Abrufen der Filme:", err);
       setError("Filme konnten nicht geladen werden.");
     }
+  };
+  
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Token aus dem localStorage entfernen
+    setIsLoggedIn(false); // Zustand zurücksetzen
   };
 
   return (
@@ -60,7 +72,14 @@ export default function GenrePage() {
             height={80}
           />
         </div>
-        {!isLoggedIn && (
+        {isLoggedIn ? (
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
+          >
+            Logout
+          </button>
+        ) : (
           <Link href="/login">
             <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
               Einloggen
