@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
 import { FaRegStar, FaStar } from "react-icons/fa";
 
 export default function HomePage() {
@@ -16,15 +17,28 @@ export default function HomePage() {
   const [sortOption, setSortOption] = useState("default");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-      setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
-    } else {
+    if (token) {
       setIsLoggedIn(true);
+
+      // ✅ Rolle aus dem JWT-Token lesen mit jwt-decode
+      try {
+        const decoded: any = jwtDecode(token);
+        if (decoded?.role) {
+          setUserRole(decoded.role);
+          console.log("User Role:", decoded.role);
+        }
+      } catch (err) {
+        console.error("Token konnte nicht dekodiert werden:", err);
+      }
+
       fetchMovies(token);
+    } else {
+      setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
     }
   }, []);
 
@@ -97,15 +111,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
       <header className="flex items-center justify-between px-8 py-4">
-        <div className="relative w-[300px] h-[80px]">
-          <img
-            src="https://i.ibb.co/CpmRBD0X/image.png"
-            alt="DualStream Logo"
-            className="object-contain"
-            width={300}
-            height={80}
-          />
-        </div>
+        <Link href="/">
+          <div className="relative w-[300px] h-[80px] cursor-pointer">
+            <img
+              src="https://i.ibb.co/CpmRBD0X/image.png"
+              alt="DualStream Logo"
+              className="object-contain"
+              width={300}
+              height={80}
+            />
+          </div>
+        </Link>
         {isLoggedIn ? (
           <div className="relative inline-block text-left">
             <div>
@@ -120,28 +136,47 @@ export default function HomePage() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Benutzer
+                {userRole === "ADMIN" ? "Admin" : "Benutzer"}
               </button>
             </div>
 
             {dropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
-                <div className="py-1">
-                  <button
-                    onClick={() => router.push("/benutzerkonto")}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                  >
-                    Benutzerkonto verwalten
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
+                <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                  <div className="py-1">
+                    {userRole === "ADMIN" ? (
+                      <>
+                        <button
+                          onClick={() => router.push("/admin/panel")}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Admin-Panel
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                        >
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => router.push("/benutzerkonto")}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Benutzerkonto verwalten
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                        >
+                          Logout
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         ) : (
           <Link href="/login">
