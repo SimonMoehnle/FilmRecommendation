@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     if (data.token) {
       localStorage.setItem("token", data.token);
-      router.push("/home"); // Weiterleitung nach Login
+      router.push("/home"); // Weiterleitung nach Login 
     } else {
       alert(data.error || "Fehler beim Login");
     }

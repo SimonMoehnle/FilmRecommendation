@@ -49,6 +49,4 @@ export default async function adminRoutes(fastify, options) {
       }
     }
   );
-
-  
 }
