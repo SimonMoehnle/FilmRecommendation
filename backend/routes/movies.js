@@ -13,9 +13,8 @@ import { requireAnyRole } from "../services/authMiddleware.js";
   
   export default async function movieRoutes(fastify, options) {
     // Route: Alle Filme abrufen
-    fastify.get("/movies", {
-      preHandler: requireAnyRole(["USER", "ADMIN"]),
-    }, async (request, reply) => {
+    // Route: Alle Filme abrufen (ohne Auth)
+    fastify.get("/movies", async (request, reply) => {
       try {
         const movies = await getAllMovies();
         return reply.send({ movies });

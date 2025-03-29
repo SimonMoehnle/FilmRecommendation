@@ -124,3 +124,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Optional: Scrollbar immer sichtbar und modern */
+::-webkit-scrollbar {
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #b91c1c; /* Tailwind red-700 */
+  border-radius: 10px;
+}

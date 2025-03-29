@@ -19,45 +19,42 @@ export default function GenrePage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+    
+      if (token) {
+        setIsLoggedIn(true);
+      }
+    
+      fetchMovies(); // immer ausführen – egal ob eingeloggt oder nicht
+    }, []);
+    
 
-    if (!token) {
-      setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
-      return;
-    } else {
-      setIsLoggedIn(true);
-      fetchMovies(token);
-    }
-  }, []);
-
-  const fetchMovies = async (token: string) => {
-    try {
-      const res = await fetch("http://localhost:4000/movies", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-  
-      const topRated = data.movies
-        .filter((m: Movie) => typeof m.averageRating === "number")
-        .sort((a: Movie, b: Movie) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
-        .slice(0, 4);
-  
-      setMovies(topRated);
-    } catch (err) {
-      console.error("Fehler beim Abrufen der Filme:", err);
-      setError("Filme konnten nicht geladen werden.");
-    }
-  };
+    const fetchMovies = async () => {
+      try {
+        const res = await fetch("http://localhost:4000/movies"); // Kein Token nötig
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    
+        const data = await res.json();
+    
+        const topRated = data.movies
+          .filter((m: Movie) => typeof m.averageRating === "number")
+          .sort((a: Movie, b: Movie) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
+          .slice(0, 4);
+    
+        setMovies(topRated);
+      } catch (err) {
+        console.error("Fehler beim Abrufen der Filme:", err);
+        setError("Filme konnten nicht geladen werden.");
+      }
+    };
+    
   
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // Token aus dem localStorage entfernen
     setIsLoggedIn(false); // Zustand zurücksetzen
+    router.push("/"); // Zur Landing-Seite weiterleiten
   };
 
   return (
