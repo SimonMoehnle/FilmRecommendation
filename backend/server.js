@@ -30,7 +30,7 @@ fastify.register(userRoutes);
 fastify.register(movieRoutes);
 fastify.register(ratingRoutes);
 fastify.register(recommendationRoutes);
-fastify.register(adminRoutes);
+fastify.register(adminRoutes)
 
 // ✅ Server starten
 const start = async () => {

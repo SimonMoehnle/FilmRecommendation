@@ -64,15 +64,15 @@ export default function MovieDetail() {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
       {/* Header mit Logo und Login/Logout-Button */}
       <header className="flex items-center justify-between px-8 py-4">
-        <div className="relative w-[300px] h-[80px]">
-          <img
-            src="https://i.ibb.co/CpmRBD0X/image.png"
-            alt="DualStream Logo"
-            className="object-contain"
-            width={300}
-            height={80}
-          />
-        </div>
+      <Link href="/" className="relative w-[300px] h-[80px] block">
+        <img
+          src="https://i.ibb.co/CpmRBD0X/image.png"
+          alt="DualStream Logo"
+          className="object-contain w-full h-full"
+          width={300}
+          height={80}
+        />
+      </Link>
         {isLoggedIn ? (
           <div className="relative inline-block text-left">
             <div>
