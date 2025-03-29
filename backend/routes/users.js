@@ -1,7 +1,8 @@
-import { getAllUsers, registerUser, deleteUser } from "../services/userService.js"; // Import der Service-Funktionen
+import { getAllUsers, registerUser, deleteUser, updateUserProfile } from "../services/userService.js"; // Import der Service-Funktionen
 import bcrypt from "bcryptjs";
 import { getSession } from "../db.js";
 import jwt from "jsonwebtoken";
+import { requireAnyRole } from "../services/authMiddleware.js";
 
 
 export default async function userRoutes(fastify, options) {
@@ -65,6 +66,33 @@ export default async function userRoutes(fastify, options) {
         });
         }
     });
+
+    // Route: Benutzerprofil aktualisieren
+    fastify.put(
+        "/users/me/update",
+        {
+          preHandler: requireAnyRole(["USER", "ADMIN"]),
+        },
+        async (request, reply) => {
+          const userId = request.user.userId;
+          const { name, email, password } = request.body;
+      
+          if (!name && !email && !password) {
+            return reply.status(400).send({ error: "Mindestens ein Feld (Name, E-Mail oder Passwort) muss angegeben werden." });
+          }
+      
+          try {
+            const updatedUser = await updateUserProfile(userId, { name, email, password });
+            return reply.status(200).send(updatedUser);
+          } catch (error) {
+            request.log.error(error);
+            return reply.status(500).send({
+              error: "Profil konnte nicht aktualisiert werden.",
+              details: error.message,
+            });
+        }
+    });
+      
 
     fastify.post("/login", async (request, reply) => {
       const { email, password } = request.body;

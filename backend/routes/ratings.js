@@ -10,6 +10,7 @@ export default async function ratingRoutes(fastify, options) {
       preHandler: requireAnyRole(["USER", "ADMIN"]),
     },
     async (request, reply) => {
+      console.log("eingeloggter user:", request.user);
       const { movieId } = request.params;
       const numericMovieId = parseInt(movieId, 10);
       const { score, review } = request.body;
