@@ -1,6 +1,7 @@
 import { registerAdmin } from "../services/adminService.js";
 import { blockUser } from "../services/userService.js"; // Importiere blockUser, falls es verwendet wird
 import { requireAnyRole } from "../services/authMiddleware.js"; // Importiere requireAnyRole
+import { getGenreTrends } from "../services/adminService.js"; // Importiere getGenreTrends
 
 export default async function adminRoutes(fastify, options) {
   // Route zur Admin-Registrierung
@@ -50,4 +51,19 @@ export default async function adminRoutes(fastify, options) {
       }
     }
   );
+  
+  // Route zur Abfrage von Genre-Trends für das Admin-Panel
+  fastify.get("/stats/genre-trends", async (request, reply) => {
+    const { range = "30", groupBy = "day" } = request.query;
+    const days = parseInt(range.replace("d", ""), 10);
+  
+    try {
+      const result = await getGenreTrends(days, groupBy); // 👈 session NICHT mehr übergeben
+  
+      return reply.send(result); // erwartet Objekt { data: [...] }
+    } catch (err) {
+      console.error("❌ Fehler in /stats/genre-trends:", err);
+      return reply.status(500).send({ error: "Fehler beim Abrufen der Genre-Trends" });
+    }
+  });
 }

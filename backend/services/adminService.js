@@ -71,3 +71,57 @@ export async function blockUser(userId, block) {
   }
 }
 
+
+// Funktion zur Abfrage von Genre-Trends
+export async function getGenreTrends(days = 30, groupBy = "day") {
+  const session = getSession(); // Stelle sicher, dass getSession() ein Neo4j-Session-Objekt zurückgibt!
+  const baseParams = { days: Number(days) };
+
+  const query =
+    groupBy === "week"
+      ? `
+        MATCH (:User)-[r:RATED]->(m:Movie)
+        WHERE r.ratedAt >= datetime() - duration({days: $days})
+        WITH m.genre AS genre,
+             toString(date.truncate('week', r.ratedAt)) AS period,
+             avg(r.score) AS avgRating,
+             count(*) AS ratingCount
+        RETURN genre, period, avgRating, ratingCount
+        ORDER BY period
+      `
+      : `
+        MATCH (:User)-[r:RATED]->(m:Movie)
+        WHERE r.ratedAt >= datetime() - duration({days: $days})
+        WITH m.genre AS genre,
+             toString(date(r.ratedAt)) AS period,
+             avg(r.score) AS avgRating,
+             count(*) AS ratingCount
+        RETURN genre, period, avgRating, ratingCount
+        ORDER BY period
+      `;
+
+  try {
+    const result = await session.run(query, baseParams);
+    console.log("📊 Genre-Trends:", result.records.length);
+
+    const mapped = result.records.map((record) => ({
+      genre: record.get("genre"),
+      period: record.get("period"),
+      avgRating: record.get("avgRating").toNumber?.() ?? record.get("avgRating"),
+      ratingCount: record.get("ratingCount").toNumber?.() ?? record.get("ratingCount"),
+    }));
+
+    return { data: mapped }; // Rückgabe als Objekt
+  } catch (error) {
+    console.error("❌ Fehler in getGenreTrends():", error);
+    return { error: "Fehler beim Abrufen der Genre-Trends" };
+  } finally {
+    await session.close();
+  }
+}
+
+
+
+
+
+

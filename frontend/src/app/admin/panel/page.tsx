@@ -11,6 +11,9 @@ import { Trash2, Ban, Unlock, Clapperboard } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import GenreTrendChart from "@/components/GenreTrendChart";
+
+
 
 interface User {
   userId: number;
@@ -127,7 +130,9 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={() => toggleBlockUser(user)}
-                className="text-yellow-500 hover:text-yellow-700"
+                className={`hover:text-yellow-700 ${
+                  user.isBlocked ? "text-green-500" : "text-yellow-500"
+                }`}
               >
                 {user.isBlocked ? (
                   <Unlock className="w-5 h-5" />
@@ -225,7 +230,8 @@ export default function AdminPage() {
 
       {/* Tabelle */}
       <main className="px-8 py-8">
-        <h1 className="text-3xl font-bold mb-6">Admin Panel – Benutzerverwaltung</h1>
+      <h1 className="text-5xl font-bold mb-6">Admin-Panel</h1>
+        <h2 className="text-3xl font-bold mb-6">Benutzerverwaltung</h2>
 
         <div className="border border-gray-700 rounded-lg overflow-hidden shadow-lg">
           <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
@@ -264,6 +270,10 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+        <section className="mt-12">
+          <h2 className="text-3xl font-bold mb-6">Genre-Bewertungstrends</h2>
+          <GenreTrendChart />
+        </section>
       </main>
     </div>
   );
