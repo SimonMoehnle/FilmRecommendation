@@ -6,6 +6,7 @@ import ratingRoutes from "./routes/ratings.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
 import jwt from "@fastify/jwt";
 import dotenv from "dotenv"; //lädt .env Datei
+import adminRoutes from "./routes/admin.js";
 dotenv.config(); //lädt .env Datei
 
 const fastify = Fastify({ logger: true });
@@ -29,6 +30,7 @@ fastify.register(userRoutes);
 fastify.register(movieRoutes);
 fastify.register(ratingRoutes);
 fastify.register(recommendationRoutes);
+fastify.register(adminRoutes);
 
 // ✅ Server starten
 const start = async () => {
