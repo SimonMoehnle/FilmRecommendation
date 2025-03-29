@@ -1,10 +1,11 @@
 import { registerAdmin } from "../services/adminService.js";
+import { blockUser } from "../services/userService.js"; // Importiere blockUser, falls es verwendet wird
+import { requireAnyRole } from "../services/authMiddleware.js"; // Importiere requireAnyRole
 
 export default async function adminRoutes(fastify, options) {
+  // Route zur Admin-Registrierung
   fastify.post(
     "/admin/register",
-    // optional absichern:
-    // { preHandler: requireAnyRole(["ADMIN"]) },
     async (request, reply) => {
       const { name, email, password } = request.body;
 
@@ -35,11 +36,11 @@ export default async function adminRoutes(fastify, options) {
   // Route zum Blockieren/Entsperren von Usern
   fastify.patch(
     "/admin/users/:userId/block",
-    { preHandler: requireAnyRole(["ADMIN"]) },
+    { preHandler: requireAnyRole(["ADMIN"]) }, // Sicherstellen, dass requireAnyRole korrekt importiert ist
     async (request, reply) => {
       const { userId } = request.params;
       const { block } = request.body; // boolean: true oder false
-  
+
       try {
         const result = await blockUser(userId, block);
         return reply.send(result);
@@ -49,6 +50,4 @@ export default async function adminRoutes(fastify, options) {
       }
     }
   );
-
-  
 }

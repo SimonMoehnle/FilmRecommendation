@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FaRegStar, FaStar } from "react-icons/fa";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);
@@ -12,8 +13,8 @@ export default function HomePage() {
   const [filteredMovies, setFilteredMovies] = useState<Record<string, any[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [sortOption, setSortOption] = useState("default"); // Neuer State für Sortieroption
-  const [showSortDropdown, setShowSortDropdown] = useState(false); // Neuer State für Sortier-Dropdown
+  const [sortOption, setSortOption] = useState("default");
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +40,6 @@ export default function HomePage() {
       const data = await res.json();
       setMovies(data.movies);
 
-      // Filme nach Genre gruppieren
       const genres: Record<string, any[]> = {};
       data.movies.forEach((movie: any) => {
         const genre = movie.genre || "Unbekannt";
@@ -52,6 +52,28 @@ export default function HomePage() {
     } catch (err) {
       console.error("Fehler beim Abrufen der Filme:", err);
       setError("Filme konnten nicht geladen werden.");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/");
+  };
+
+  const toggleFavorite = async (movieId: number) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:4000/favorites`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ movieId }),
+    });
+
+    if (res.ok) {
+      console.log("Film als Favorit gespeichert");
     }
   };
 
@@ -71,12 +93,6 @@ export default function HomePage() {
       setFilteredMovies(filtered);
     }
   }, [searchTerm, groupedMovies]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    router.push("/");
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
@@ -235,8 +251,18 @@ export default function HomePage() {
                     .map((movie: any) => (
                       <div
                         key={movie.movieId}
-                        className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between"
+                        className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between relative"
                       >
+                        {/* Favoriten-Stern */}
+                        <div className="relative">
+                          <button
+                            onClick={() => toggleFavorite(movie.movieId)}
+                            className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-300 z-10"
+                          >
+                            <FaRegStar size={20} />
+                          </button>
+                        </div>
+
                         <div className="p-5">
                           <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
                             {movie.title}
