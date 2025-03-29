@@ -9,7 +9,11 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [groupedMovies, setGroupedMovies] = useState<Record<string, any[]>>({});
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Zustand für Dropdown
+  const [filteredMovies, setFilteredMovies] = useState<Record<string, any[]>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sortOption, setSortOption] = useState("default"); // Neuer State für Sortieroption
+  const [showSortDropdown, setShowSortDropdown] = useState(false); // Neuer State für Sortier-Dropdown
   const router = useRouter();
 
   useEffect(() => {
@@ -44,16 +48,34 @@ export default function HomePage() {
       });
 
       setGroupedMovies(genres);
+      setFilteredMovies(genres);
     } catch (err) {
       console.error("Fehler beim Abrufen der Filme:", err);
       setError("Filme konnten nicht geladen werden.");
     }
   };
 
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredMovies(groupedMovies);
+    } else {
+      const filtered: Record<string, any[]> = {};
+      Object.entries(groupedMovies).forEach(([genre, movies]) => {
+        const matching = movies.filter((movie) =>
+          movie.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (matching.length > 0) {
+          filtered[genre] = matching;
+        }
+      });
+      setFilteredMovies(filtered);
+    }
+  }, [searchTerm, groupedMovies]);
+
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Token aus dem localStorage entfernen
-    setIsLoggedIn(false); // Zustand zurücksetzen
-    router.push("/"); // Zur Landing-Seite weiterleiten
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/");
   };
 
   return (
@@ -122,43 +144,125 @@ export default function HomePage() {
             Entdecke alle Filme
           </h1>
 
+          {/* Suchfeld */}
+          <div className="max-w-md mx-auto mb-12">
+            <input
+              type="text"
+              placeholder="Filmtitel suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full p-3 rounded-lg bg-[#1e1e1e] text-white border border-red-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600"
+            />
+          </div>
+
+          {/* Filter & Sortierung */}
+          <div className="flex justify-center mb-10 relative">
+            <button
+              className="flex items-center bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L15 13.414V18a1 1 0 01-.553.894l-4 2A1 1 0 019 20v-6.586L3.293 6.707A1 1 0 013 6V4z"
+                />
+              </svg>
+              Sortieren
+            </button>
+
+            {showSortDropdown && (
+              <div className="absolute top-12 z-10 bg-gray-800 text-white rounded shadow-lg w-60">
+                <ul>
+                  <li>
+                    <button
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-700 ${
+                        sortOption === "default" ? "bg-gray-700" : ""
+                      }`}
+                      onClick={() => setSortOption("default")}
+                    >
+                      Standard (nach Genre)
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-700 ${
+                        sortOption === "rating" ? "bg-gray-700" : ""
+                      }`}
+                      onClick={() => setSortOption("rating")}
+                    >
+                      Beliebtheit (Beste Bewertung)
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-700 ${
+                        sortOption === "title" ? "bg-gray-700" : ""
+                      }`}
+                      onClick={() => setSortOption("title")}
+                    >
+                      Titel (A–Z)
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
           {/* Film-Gruppen nach Genre anzeigen */}
-          {Object.keys(groupedMovies).map((genre) => (
+          {Object.keys(filteredMovies).map((genre) => (
             <section key={genre} className="mb-10">
               <h2 className="text-2xl font-semibold mb-6">{genre}</h2>
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-transparent">
                 <div className="flex gap-6 pb-4 w-max">
-                  {groupedMovies[genre].map((movie: any) => (
-                    <div
-                      key={movie.movieId}
-                      className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between"
-                    >
-                      <div className="p-5">
-                        <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
-                          {movie.title}
-                        </h3>
+                  {filteredMovies[genre]
+                    .sort((a, b) => {
+                      if (sortOption === "rating") {
+                        return (b.averageRating ?? 0) - (a.averageRating ?? 0);
+                      } else if (sortOption === "title") {
+                        return a.title.localeCompare(b.title);
+                      }
+                      return 0; // default: keine Sortierung
+                    })
+                    .slice(0, searchTerm.trim() === "" ? 30 : undefined)
+                    .map((movie: any) => (
+                      <div
+                        key={movie.movieId}
+                        className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between"
+                      >
+                        <div className="p-5">
+                          <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
+                            {movie.title}
+                          </h3>
 
-                        <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                          {movie.description || "Imported from MovieLens"}
-                        </p>
-
-                        <div className="flex items-center mb-4">
-                          <p className="text-white text-sm">
-                            Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
+                          <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                            {movie.description || "Imported from MovieLens"}
                           </p>
-                          <span className="text-yellow-400 ml-2">⭐</span>
+
+                          <div className="flex items-center mb-4">
+                            <p className="text-white text-sm">
+                              Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
+                            </p>
+                            <span className="text-yellow-400 ml-2">⭐</span>
+                          </div>
+                        </div>
+
+                        <div className="p-5 pt-0">
+                          <Link href={`/movie/${movie.movieId}`}>
+                            <button className="bg-red-600 text-white py-2 px-4 rounded w-full hover:bg-red-700 transition font-semibold">
+                              Detailansicht
+                            </button>
+                          </Link>
                         </div>
                       </div>
-
-                      <div className="p-5 pt-0">
-                        <Link href={`/movie/${movie.movieId}`}>
-                          <button className="bg-red-600 text-white py-2 px-4 rounded w-full hover:bg-red-700 transition font-semibold">
-                            Detailansicht
-                          </button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </section>
