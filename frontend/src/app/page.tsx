@@ -158,8 +158,38 @@ export default function GenrePage() {
             Mehr Gründe für eine Mitgliedschaft
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full max-w-7xl">
-            {/* Vorteilskarten */}
-            {/* (Unverändert, daher ausgelassen) */}
+            {/* Vorteilskarte 1 */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg flex flex-col items-start">
+              <div className="text-3xl mb-3">🎬</div>
+              <h3 className="text-xl font-semibold mb-2">Auf deinem Fernseher</h3>
+              <p className="text-sm text-white/90">
+                Streame Filme auf Smart-TVs, PlayStation, Xbox, Chromecast und mehr.
+              </p>
+            </div>
+            {/* Vorteilskarte 2 */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-pink-600 to-red-600 shadow-lg flex flex-col items-start">
+              <div className="text-3xl mb-3">⬇️</div>
+              <h3 className="text-xl font-semibold mb-2">Offline ansehen</h3>
+              <p className="text-sm text-white/90">
+                Lade Filme und Serien herunter, um sie unterwegs ohne Internetverbindung zu schauen.
+              </p>
+            </div>
+            {/* Vorteilskarte 3 */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg flex flex-col items-start">
+              <div className="text-3xl mb-3">💻</div>
+              <h3 className="text-xl font-semibold mb-2">Auf allen Geräten</h3>
+              <p className="text-sm text-white/90">
+                Schaue deine Lieblingsinhalte auf Smartphone, Tablet, Laptop oder Fernseher.
+              </p>
+            </div>
+            {/* Vorteilskarte 4 */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-500 shadow-lg flex flex-col items-start">
+              <div className="text-3xl mb-3">👪</div>
+              <h3 className="text-xl font-semibold mb-2">Profile für Kinder</h3>
+              <p className="text-sm text-white/90">
+                Erstelle kinderfreundliche Profile, damit die Kleinen sicher nur altersgerechte Inhalte sehen.
+              </p>
+            </div>
           </div>
         </section>
       </main>
