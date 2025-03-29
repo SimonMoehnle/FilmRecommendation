@@ -3,25 +3,67 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
 
 export default function FavoritenPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [favorites, setFavorites] = useState([]); // Definiere den favorites-State
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
+      fetchFavorites(token); // Hole die Favoriten
     } else {
       router.push("/login"); // Weiterleitung zur Login-Seite, wenn nicht eingeloggt
     }
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token"); // Token aus dem localStorage entfernen
-    setIsLoggedIn(false); // Zustand zurücksetzen
-    router.push("/"); // Zur Landing-Seite weiterleiten
+  const fetchFavorites = async (token: string) => {
+    try {
+      const decoded: any = jwtDecode(token); // JWT-Token dekodieren
+      const userId = decoded.userId; // Benutzer-ID aus dem Token extrahieren
+
+      const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Fehler beim Abrufen der Favoriten");
+      }
+
+      const data = await res.json();
+      setFavorites(data.favorites); // Favoriten im State speichern
+    } catch (error) {
+      console.error("Fehler beim Abrufen der Favoriten:", error);
+    }
+  };
+
+  const handleRemoveFavorite = async (movieId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Fehler beim Entfernen aus Favoriten");
+
+      // Favoritenliste aktualisieren
+      setFavorites((prev) =>
+        prev.filter((movie) => (movie.movieId?.low ?? movie.movieId) !== movieId)
+      );
+    } catch (error) {
+      console.error("Fehler beim Entfernen aus Favoriten:", error);
+    }
   };
 
   return (
@@ -79,7 +121,11 @@ export default function FavoritenPage() {
                     Benutzerkonto verwalten
                   </button>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      setIsLoggedIn(false);
+                      router.push("/");
+                    }}
                     className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
                   >
                     Logout
@@ -106,114 +152,45 @@ export default function FavoritenPage() {
           Hier kannst du deine Lieblingsfilme sehen.
         </p>
         <div className="mt-12">
-          <div className="p-6 rounded-lg bg-gray-800 text-white shadow-lg">
-            <p className="text-center">Platzhalter für Favoriten-Inhalte</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {favorites.length === 0 ? (
+              <div className="col-span-full text-center text-gray-400">
+                Noch keine Favoriten gespeichert.
+              </div>
+            ) : (
+              favorites.map((movie: any, index: number) => (
+                <div
+                  key={`${movie.movieId?.low ?? index}-${index}`} // Eindeutiger Key
+                  className="bg-[#1e2736] rounded-lg border border-red-600 p-4 shadow-md flex flex-col justify-between"
+                >
+                  <Link href={`/movie/${movie.movieId?.low ?? movie.movieId}`}>
+                    <h2 className="text-xl font-bold mb-2 cursor-pointer hover:underline">
+                      {movie.title}
+                    </h2>
+                  </Link>
+                  <p className="text-gray-300 text-sm mb-2">
+                    {movie.description || "Keine Beschreibung verfügbar."}
+                  </p>
+                  <p className="text-sm text-white mb-1">
+                    Genre: <span className="text-gray-400">{movie.genre}</span>
+                  </p>
+                  <p className="text-sm text-white">
+                    Bewertung: {movie.averageRating?.toFixed(1) ?? "–"} / 5 ⭐
+                  </p>
+                  <button
+                    onClick={() =>
+                      handleRemoveFavorite(movie.movieId?.low ?? movie.movieId)
+                    }
+                    className="mt-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Aus Favoriten entfernen
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-black/80 text-white px-8 py-10 text-sm">
-        <div className="max-w-6xl mx-auto flex flex-col space-y-4">
-          {/* Hotline / Kontakt */}
-          <p className="mb-4">Fragen? Einfach anrufen: 0800-000-5677</p>
-
-          {/* Mehrspaltiges Link-Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:underline">
-                  Häufig gestellte Fragen (FAQ)
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Medien-Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Geschenkkarten kaufen
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Datenschutz
-                </a>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:underline">
-                  Möglichkeit kündigen
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Hilfe-Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Karriere
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Rechtliche Hinweise
-                </a>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:underline">
-                  Konto
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  DualiStream Shop
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Nutzungsbedingungen
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Impressum
-                </a>
-              </li>
-            </ul>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:underline">
-                  Cookie-Einstellungen
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Kontakt
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Wahlmöglichkeiten für Werbung
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline">
-                  Nur auf DualiStream
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Standort */}
-          <p className="mt-4 text-gray-400">DualiStream Deutschland</p>
-        </div>
-      </footer>
     </div>
   );
 }

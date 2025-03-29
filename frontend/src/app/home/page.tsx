@@ -21,6 +21,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    try {
+      const decoded: any = jwtDecode(token);
+      console.log("Decoded JWT:", decoded); // 👈 DAS hier einfügen
+    }
+    catch (err) {
+      console.error("Token konnte nicht dekodiert werden:", err);
+    }    
 
     if (token) {
       setIsLoggedIn(true);
@@ -80,7 +87,6 @@ export default function HomePage() {
     const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
@@ -165,6 +171,20 @@ export default function HomePage() {
                           className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
                         >
                           Benutzerkonto verwalten
+                        </button>
+                        <button
+                          onClick={() => {
+                            const token = localStorage.getItem("token");
+                            if (token) {
+                              const decoded: any = jwtDecode(token);
+                              if (decoded?.userId) {
+                                router.push(`/${decoded.userId}/favoritenliste`);
+                              }
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Meine Favoriten
                         </button>
                         <button
                           onClick={handleLogout}
