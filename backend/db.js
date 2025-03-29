@@ -86,4 +86,8 @@ async function createSchema() {
   }
 }
 
+// Füge die db-Instanz als Standardexport hinzu
+const db = driver.session();
+export default db;
+
 export { driver, createSchema, getSession };
