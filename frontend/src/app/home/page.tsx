@@ -2,12 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [groupedMovies, setGroupedMovies] = useState<Record<string, any[]>>({});
+  const [dropdownOpen, setDropdownOpen] = useState(false); // Zustand für Dropdown
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -66,12 +69,42 @@ export default function HomePage() {
           />
         </div>
         {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
-          >
-            Logout
-          </button>
+          <div className="relative inline-block text-left">
+            <div>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
+                id="menu-button"
+                aria-expanded="true"
+                aria-haspopup="true"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Benutzer
+              </button>
+            </div>
+
+            {dropdownOpen && (
+              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                <div className="py-1">
+                  <button
+                    onClick={() => router.push("/benutzerkonto")}
+                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                  >
+                    Benutzerkonto verwalten
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <Link href="/login">
             <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
@@ -92,42 +125,42 @@ export default function HomePage() {
           {/* Film-Gruppen nach Genre anzeigen */}
           {Object.keys(groupedMovies).map((genre) => (
             <section key={genre} className="mb-10">
-                <h2 className="text-2xl font-semibold mb-6">{genre}</h2>
-                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-transparent">
-                  <div className="flex gap-6 pb-4 w-max">
-                    {groupedMovies[genre].map((movie: any) => (
-                      <div 
-                        key={movie.movieId} 
-                        className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between"
-                      >
-                        <div className="p-5">
-                          <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
-                            {movie.title}
-                          </h3>
+              <h2 className="text-2xl font-semibold mb-6">{genre}</h2>
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-transparent">
+                <div className="flex gap-6 pb-4 w-max">
+                  {groupedMovies[genre].map((movie: any) => (
+                    <div
+                      key={movie.movieId}
+                      className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between"
+                    >
+                      <div className="p-5">
+                        <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
+                          {movie.title}
+                        </h3>
 
-                          <p className="text-gray-300 text-sm mb-4 line-clamp-3">
-                            {movie.description || "Imported from MovieLens"}
+                        <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                          {movie.description || "Imported from MovieLens"}
+                        </p>
+
+                        <div className="flex items-center mb-4">
+                          <p className="text-white text-sm">
+                            Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
                           </p>
-
-                          <div className="flex items-center mb-4">
-                            <p className="text-white text-sm">
-                              Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
-                            </p>
-                            <span className="text-yellow-400 ml-2">⭐</span>
-                          </div>
-                        </div>
-
-                        <div className="p-5 pt-0">
-                          <Link href={`/movie/${movie.movieId}`}>
-                            <button className="bg-red-600 text-white py-2 px-4 rounded w-full hover:bg-red-700 transition font-semibold">
-                              Detailansicht
-                            </button>
-                          </Link>
+                          <span className="text-yellow-400 ml-2">⭐</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      <div className="p-5 pt-0">
+                        <Link href={`/movie/${movie.movieId}`}>
+                          <button className="bg-red-600 text-white py-2 px-4 rounded w-full hover:bg-red-700 transition font-semibold">
+                            Detailansicht
+                          </button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </div>
             </section>
           ))}
         </main>
