@@ -34,15 +34,17 @@ export default function BenutzerkontoPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4">
         {/* Logo */}
-        <div className="relative w-[300px] h-[80px]">
-          <img
-            src="https://i.ibb.co/CpmRBD0X/image.png"
-            alt="DualStream Logo"
-            className="object-contain"
-            width={300}
-            height={80}
-          />
-        </div>
+        <Link href="/">
+          <div className="relative w-[300px] h-[80px] cursor-pointer">
+            <img
+              src="https://i.ibb.co/CpmRBD0X/image.png"
+              alt="DualStream Logo"
+              className="object-contain"
+              width={300}
+              height={80}
+            />
+          </div>
+        </Link>
 
         {/* Benutzer Dropdown */}
         {isLoggedIn ? (

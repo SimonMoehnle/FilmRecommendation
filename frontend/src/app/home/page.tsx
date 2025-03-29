@@ -23,7 +23,6 @@ export default function HomePage() {
     const token = localStorage.getItem("token");
     try {
       const decoded: any = jwtDecode(token);
-      console.log("Decoded JWT:", decoded); // 👈 DAS hier einfügen
     }
     catch (err) {
       console.error("Token konnte nicht dekodiert werden:", err);
