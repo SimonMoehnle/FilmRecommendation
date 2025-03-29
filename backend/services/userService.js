@@ -2,33 +2,6 @@ import bcrypt from "bcryptjs";
 import { getSession } from "../db.js";
 
 
-// 🚀 Funktion: Alle User abrufen
-export async function getAllUsers() {
-    const session = getSession();
-    try {
-      const result = await session.run("MATCH (u:User) RETURN u");
-  
-      return result.records.map((record) => {
-        const user = record.get("u").properties;
-  
-        return {
-          userId: user.userId?.low ?? user.userId,
-          name: user.name,
-          email: user.email,
-          passwordHash: user.passwordHash,
-          role: user.role,
-          isBlocked: user.isBlocked
-        };
-      });
-    } catch (error) {
-      console.error("Fehler beim Abrufen der User:", error);
-      throw error;
-    } finally {
-      await session.close();
-    }
-}
-  
-
 // 🚀 Funktion: Neuen User erstellen
 export async function registerUser(name, email, password) {
     const session = getSession();

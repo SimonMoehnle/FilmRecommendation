@@ -50,3 +50,24 @@ export async function registerAdmin(name, email, password) {
     await session.close();
   }
 }
+
+export async function blockUser(userId, block) {
+  const session = getSession();
+  try {
+    await session.run(
+      `
+      MATCH (u:User {userId: toInteger($userId)})
+      SET u.isBlocked = $block
+      `,
+      { userId, block }
+    );
+
+    return {
+      message: `Benutzer wurde erfolgreich ${block ? "gesperrt" : "entsperrt"}.`,
+      userId,
+    };
+  } finally {
+    await session.close();
+  }
+}
+

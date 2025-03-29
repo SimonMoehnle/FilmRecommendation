@@ -31,4 +31,24 @@ export default async function adminRoutes(fastify, options) {
       }
     }
   );
+
+  // Route zum Blockieren/Entsperren von Usern
+  fastify.patch(
+    "/admin/users/:userId/block",
+    { preHandler: requireAnyRole(["ADMIN"]) },
+    async (request, reply) => {
+      const { userId } = request.params;
+      const { block } = request.body; // boolean: true oder false
+  
+      try {
+        const result = await blockUser(userId, block);
+        return reply.send(result);
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({ error: "Fehler beim Blockieren/Entsperren" });
+      }
+    }
+  );
+
+  
 }
