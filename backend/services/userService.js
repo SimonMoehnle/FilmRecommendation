@@ -150,3 +150,59 @@ export async function getUserProfile(userId) {
     }
 }
 
+//Funktion: Benutzerprofil aktualisieren
+export async function updateUserProfile(userId, { name, email, password }) {
+    const session = getSession();
+    try {
+      const updates = [];
+      const params = { userId };
+  
+      if (name) {
+        updates.push("u.name = $name");
+        params.name = name;
+      }
+  
+      if (email) {
+        updates.push("u.email = $email");
+        params.email = email;
+      }
+  
+      if (password) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        updates.push("u.passwordHash = $passwordHash");
+        params.passwordHash = passwordHash;
+      }
+  
+      if (updates.length === 0) {
+        throw new Error("Keine gültigen Felder zum Aktualisieren übergeben.");
+      }
+  
+      const query = `
+        MATCH (u:User {userId: $userId})
+        SET ${updates.join(", ")}
+        RETURN u.userId AS userId, u.name AS name, u.email AS email
+      `;
+  
+      const result = await session.run(query, params);
+  
+      if (result.records.length === 0) {
+        throw new Error("User wurde nicht gefunden.");
+      }
+  
+      const record = result.records[0];
+
+        return {
+        message: "Profil erfolgreich aktualisiert!",
+        user:{
+            userId: record.get("userId")?.low ?? record.get("userId"),
+            name: record.get("name") ?? null,
+            email: record.get("email") ?? null,
+            },
+        };
+       
+    } finally {
+      await session.close();
+    }
+  }
+  
+
