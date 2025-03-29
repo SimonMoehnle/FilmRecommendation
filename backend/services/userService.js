@@ -123,6 +123,30 @@ export async function getUserProfile(userId) {
     }
 }
 
+// Funktion: Alle Benutzer abrufen
+export async function getAllUsers() {
+    const session = getSession();
+    try {
+        const result = await session.run("MATCH (u:User) RETURN u");
+        const users = result.records.map(record => {
+            const user = record.get("u").properties;
+            return {
+                userId: user.userId?.low ?? user.userId,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isBlocked: user.isBlocked,
+            };
+        });
+        return users;
+    } catch (error) {
+        console.error("Fehler beim Abrufen der Benutzer:", error);
+        throw error;
+    } finally {
+        await session.close();
+    }
+}
+
 //Funktion: Benutzerprofil aktualisieren
 export async function updateUserProfile(userId, { name, email, password }) {
     const session = getSession();
@@ -177,5 +201,37 @@ export async function updateUserProfile(userId, { name, email, password }) {
       await session.close();
     }
   }
-  
+
+// Funktion: Benutzer blockieren oder entsperren
+export async function blockUser(userId, block) {
+    const session = getSession();
+    try {
+        // Prüfen, ob der Benutzer existiert
+        const userExists = await session.run(
+            "MATCH (u:User {userId: toInteger($userId)}) RETURN u",
+            { userId }
+        );
+
+        if (userExists.records.length === 0) {
+            return { error: "Benutzer nicht gefunden!" };
+        }
+
+        // Benutzer blockieren oder entsperren
+        await session.run(
+            "MATCH (u:User {userId: toInteger($userId)}) SET u.isBlocked = $block RETURN u",
+            { userId, block }
+        );
+
+        return {
+            message: block ? "Benutzer erfolgreich blockiert!" : "Benutzer erfolgreich entsperrt!",
+            userId,
+        };
+    } catch (error) {
+        console.error("Fehler beim Blockieren/Entsperren des Benutzers:", error);
+        throw error;
+    } finally {
+        await session.close();
+    }
+}
+
 
