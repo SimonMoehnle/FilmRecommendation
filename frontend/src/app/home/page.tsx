@@ -77,14 +77,14 @@ export default function HomePage() {
 
   const toggleFavorite = async (movieId: number) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:4000/favorites`, {
+    const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ movieId }),
     });
+    
 
     if (res.ok) {
       console.log("Film als Favorit gespeichert");
