@@ -68,12 +68,24 @@ export async function createMovie(title, genre, description, releaseYear) {
   try {
     const result = await session.run(
       `
-      MERGE (counter:Counter {id: "movieId"}) 
-      ON CREATE SET counter.value = 1 
-      ON MATCH SET counter.value = counter.value + 1 
-      WITH counter.value AS movieId
+      // 1. Ermittle den aktuellen höchsten movieId-Wert (oder 0, wenn keine Filme existieren)
+      MATCH (m:Movie)
+      WITH coalesce(max(m.movieId), 0) AS maxId
+      
+      // 2. Merge den Counter und passe seinen Wert an, falls nötig
+      MERGE (counter:Counter {id: "movieId"})
+      ON CREATE SET counter.value = maxId
+      ON MATCH SET counter.value = CASE WHEN counter.value < maxId THEN maxId ELSE counter.value END
+      WITH counter
+      
+      // 3. Erhöhe den Counter um 1 und hole den neuen Wert als newMovieId
+      WITH counter, counter.value AS currentValue
+      SET counter.value = currentValue + 1
+      WITH counter.value AS newMovieId
+      
+      // 4. Erstelle den neuen Film mit der eindeutigen movieId
       CREATE (m:Movie {
-        movieId: movieId, 
+        movieId: newMovieId, 
         title: $title,
         genre: $genre, 
         description: $description, 
@@ -109,6 +121,7 @@ export async function createMovie(title, genre, description, releaseYear) {
     await session.close();
   }
 }
+
 
 
 

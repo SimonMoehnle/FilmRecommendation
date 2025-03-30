@@ -45,15 +45,30 @@ export default function GenreTrendChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token"); // Oder wo auch immer du das Token speicherst
+  
+        if (!token) {
+          console.warn("🚫 Kein Token gefunden");
+          return;
+        }
+  
+        // Optional: JWT decode, falls du Infos aus dem Token brauchst
+        // const decoded = jwtDecode(token);
+        // console.log("Decoded Token:", decoded);
+  
         const res = await fetch(
-          `http://localhost:4000/stats/genre-trends?range=${range}&groupBy=day`
-        );
+          `http://localhost:4000/stats/genre-trends?range=${range}&groupBy=day`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        });
+  
         const json = await res.json();
         console.log("📊 GenreTrendChart data:", json);
         if (json && Array.isArray(json.data)) {
           setData(json.data);
         } else {
-          console.warn("🚫 API response is invalid:", json);
+          console.warn("🚫 API response ist ungültig:", json);
           setData([]);
         }
       } catch (err) {
@@ -61,9 +76,10 @@ export default function GenreTrendChart() {
         setData([]);
       }
     };
-
+  
     fetchData();
   }, [range]);
+  
 
   const safeData = Array.isArray(data) ? data : [];
 
