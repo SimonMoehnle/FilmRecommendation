@@ -14,42 +14,33 @@ export default function FavoritenPage() {
   const params = useParams(); // Erwartet nun { userId, favId }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    // Versuche, die userId und favId aus den URL-Parametern zu erhalten
-    let sharedUserId = params?.userId;
-    let sharedFavId = params?.favId;
-
-    // Falls in der URL kein userId steht, aber ein Token vorhanden ist, hole die userId aus dem Token
-    if (!sharedUserId && token) {
-      try {
-        const decoded: any = jwtDecode(token);
-        sharedUserId = decoded.userId;
-      } catch (error) {
-        console.error("Fehler beim Dekodieren des Tokens:", error);
-      }
-    }
-
-    // Wenn kein favId vorhanden ist, kannst du ggf. einen Default-Wert setzen, z. B. `${userId}-main`
-    if (sharedUserId && !sharedFavId) {
-      sharedFavId = `${sharedUserId}-main`;
-    }
-
-    // Falls wir eine userId haben, rufe die Favoritenliste ab.
-    if (sharedUserId !== undefined && sharedUserId !== null) {
-      setIsLoggedIn(!!token);
-      // Passe den Endpunkt an, wenn favId vorhanden ist:
-      if (sharedFavId) {
-        fetchFavorites(sharedUserId, sharedFavId, token);
-      } else {
-        // Fallback: Standardroute, falls kein favId übergeben wird
-        fetchFavorites(sharedUserId, undefined, token);
-      }
+    // Wenn eine userId in der URL vorhanden ist, handelt es sich um einen Shared-Link.
+    const urlUserId = params?.userId;
+    if (urlUserId) {
+      // Im Shared-Modus: Verwende den URL-Parameter und setze den Default-FavId.
+      const sharedFavId = `${urlUserId}-main`;
+      // Setze den Login-Status nicht über den Token – wir fordern hier eine öffentliche Abfrage.
+      setIsLoggedIn(false);
+      fetchFavorites(urlUserId, sharedFavId, undefined);
     } else {
-      router.push("/login");
+      // Falls keine userId in der URL vorhanden ist, arbeite wie bisher mit Token.
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded: any = jwtDecode(token);
+          const sharedUserId = decoded.userId;
+          const sharedFavId = `${sharedUserId}-main`;
+          setIsLoggedIn(true);
+          fetchFavorites(sharedUserId, sharedFavId, token);
+        } catch (error) {
+          console.error("Fehler beim Dekodieren des Tokens:", error);
+        }
+      } else {
+        router.push("/login");
+      }
     }
   }, [params, router]);
 
-  // Neue fetchFavorites-Funktion, die ggf. die spezifische Route aufruft:
   const fetchFavorites = async (userId: string, favId?: string, token?: string) => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
