@@ -27,27 +27,28 @@ export async function addFavorite(userId, movieId) {
 }
 
 export async function removeFavorite(userId, movieId) {
-  // Ändere hier von db.session() zu getSession()
-  const session = getSession();
-  try {
-    await session.run(
-      `
-      MATCH (u:User {userId: $userId})-[f:FAVORITED]->(m:Movie {movieId: $movieId})
-      DELETE f
-      `,
-      { 
-        userId: parseInt(userId), 
-        movieId: parseInt(movieId) 
-      }
-    );
-    return { message: "Favorit entfernt" };
-  } catch (error) {
-    console.error("❌ Fehler beim Entfernen von FAVORITED:", error);
-    throw error;
-  } finally {
-    await session.close();
+    const session = getSession();
+    try {
+      const result = await session.run(
+        `
+        MATCH (u:User {userId: $userId})-[f:FAVORITED]->(m:Movie {movieId: $movieId})
+        DELETE f
+        RETURN count(f) AS deletedCount
+        `,
+        { 
+          userId: parseInt(userId), 
+          movieId: parseInt(movieId) 
+        }
+      );
+      const deletedCount = result.records[0].get("deletedCount").toNumber();
+      return { message: deletedCount > 0 ? "Favorit entfernt" : "Kein Favorit gefunden" };
+    } catch (error) {
+      console.error("❌ Fehler beim Entfernen von FAVORITED:", error);
+      throw error;
+    } finally {
+      await session.close();
+    }
   }
-}
 
 export async function getFavoritesOfUser(userId) {
   const session = getSession();

@@ -37,7 +37,14 @@ export default function FavoritenPage() {
       }
 
       const data = await res.json();
-      setFavorites(data.favorites); // Favoriten im State speichern
+
+      // Entferne Duplikate basierend auf der movieId
+      const uniqueFavorites = data.favorites.filter(
+        (movie, index, self) =>
+          index === self.findIndex((m) => m.movieId === movie.movieId)
+      );
+
+      setFavorites(uniqueFavorites); // Favoriten im State speichern
     } catch (error) {
       console.error("Fehler beim Abrufen der Favoriten:", error);
     }

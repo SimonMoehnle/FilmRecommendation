@@ -16,6 +16,7 @@ export default function HomePage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sortOption, setSortOption] = useState("default");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState([]); // Neuer State für favorisierte Film-IDs
   const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -30,22 +31,25 @@ export default function HomePage() {
 
     if (token) {
       setIsLoggedIn(true);
-
-      // ✅ Rolle aus dem JWT-Token lesen mit jwt-decode
+    
       try {
         const decoded: any = jwtDecode(token);
         if (decoded?.role) {
           setUserRole(decoded.role);
           console.log("User Role:", decoded.role);
         }
+        if (decoded?.userId) {
+          fetchFavoriteIds(token, decoded.userId); // ✅ HIER hinzufügen
+        }
       } catch (err) {
         console.error("Token konnte nicht dekodiert werden:", err);
       }
-
+    
       fetchMovies(token);
     } else {
       setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
     }
+    
   }, []);
 
   const fetchMovies = async (token: string) => {
@@ -58,7 +62,8 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      setMovies(data.movies);
+
+      setMovies(data.movies); // erstmal nur setzen
 
       const genres: Record<string, any[]> = {};
       data.movies.forEach((movie: any) => {
@@ -75,24 +80,61 @@ export default function HomePage() {
     }
   };
 
+    // Lade die Favoriten-IDs des eingeloggten Nutzers
+    const fetchFavoriteIds = async (token, userId) => {
+      try {
+        const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Fehler beim Abrufen der Favoriten");
+        const data = await res.json();
+        // Extrahiere die movieIds aus den Favoriten
+        const favIds = data.favorites.map((movie) => movie.movieId);
+        setFavoriteIds(favIds);
+      } catch (error) {
+        console.error("Fehler beim Abrufen der Favoriten-IDs:", error);
+      }
+    };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
     router.push("/");
   };
 
+  // Toggle-Funktion: Wenn der Film bereits favorisiert ist, lösche ihn, sonst füge ihn hinzu
   const toggleFavorite = async (movieId: number) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
+    if (!token) return;
 
-    if (res.ok) {
-      console.log("Film als Favorit gespeichert");
+    if (favoriteIds.includes(movieId)) {
+      // Entfernen
+      const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setFavoriteIds((prev) => prev.filter((id) => id !== movieId));
+        setMovies((prevMovies) =>
+          prevMovies.map((movie) =>
+            movie.movieId === movieId ? { ...movie, isFavorite: false } : movie
+          )
+        );
+      }
+    } else {
+      // Hinzufügen
+      const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setFavoriteIds((prev) => [...prev, movieId]);
+        setMovies((prevMovies) =>
+          prevMovies.map((movie) =>
+            movie.movieId === movieId ? { ...movie, isFavorite: true } : movie
+          )
+        );
+      }
     }
   };
 
@@ -112,6 +154,16 @@ export default function HomePage() {
       setFilteredMovies(filtered);
     }
   }, [searchTerm, groupedMovies]);
+
+  useEffect(() => {
+    // Aktualisiere alle Filme mit isFavorite basierend auf favoriteIds
+    setMovies((prevMovies) =>
+      prevMovies.map((movie) => ({
+        ...movie,
+        isFavorite: favoriteIds.includes(movie.movieId),
+      }))
+    );
+  }, [favoriteIds]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
@@ -301,7 +353,7 @@ export default function HomePage() {
                       }
                       return 0; // default: keine Sortierung
                     })
-                    .slice(0, searchTerm.trim() === "" ? 30 : undefined)
+                    .slice(0, searchTerm.trim() === "" ? 15 : undefined)
                     .map((movie: any) => (
                       <div
                         key={movie.movieId}
@@ -311,9 +363,9 @@ export default function HomePage() {
                         <div className="relative">
                           <button
                             onClick={() => toggleFavorite(movie.movieId)}
-                            className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-300 z-10"
+                            className="absolute top-2 right-2 z-10 text-yellow-400 hover:text-yellow-300"
                           >
-                            <FaRegStar size={20} />
+                            {movie.isFavorite ? <FaStar size={20} /> : <FaRegStar size={20} />}
                           </button>
                         </div>
 
