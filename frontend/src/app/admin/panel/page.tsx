@@ -14,8 +14,6 @@ import { useRouter } from "next/navigation";
 import GenreTrendChart from "@/components/GenreTrendChart";
 import LogViewer from "@/components/LogViewer";
 
-
-
 interface User {
   userId: number;
   name: string;
@@ -66,7 +64,7 @@ export default function AdminPage() {
     try {
       await fetch(`http://localhost:4000/delete/user/${userId}`, {
         method: "DELETE",
-      });      
+      });
       setUsers((prev) => prev.filter((u) => u.userId !== userId));
     } catch (err) {
       console.error("Fehler beim Löschen:", err);
@@ -76,18 +74,21 @@ export default function AdminPage() {
   const toggleBlockUser = async (user: User) => {
     try {
       const token = localStorage.getItem("token");
-  
-      const res = await fetch(`http://localhost:4000/admin/users/${user.userId}/block`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ block: !user.isBlocked }),
-      });
-  
+
+      const res = await fetch(
+        `http://localhost:4000/admin/users/${user.userId}/block`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ block: !user.isBlocked }),
+        }
+      );
+
       if (!res.ok) throw new Error("Fehler beim Sperren/Entsperren");
-  
+
       // UI aktualisieren
       setUsers((prev) =>
         prev.map((u) =>
@@ -105,49 +106,46 @@ export default function AdminPage() {
     router.push("/");
   };
 
-  const columns = useMemo<ColumnDef<User>[]>(
-    () => [
-      { accessorKey: "userId", header: "ID" },
-      { accessorKey: "name", header: "Name" },
-      { accessorKey: "email", header: "E-Mail" },
-      { accessorKey: "role", header: "Rolle" },
-      {
-        header: "Status",
-        accessorFn: (row) => (row.isBlocked ? "Gesperrt" : "Aktiv"),
-        id: "status",
+  const columns = useMemo<ColumnDef<User>[]>(() => [
+    { accessorKey: "userId", header: "ID" },
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "email", header: "E-Mail" },
+    { accessorKey: "role", header: "Rolle" },
+    {
+      header: "Status",
+      accessorFn: (row) => (row.isBlocked ? "Gesperrt" : "Aktiv"),
+      id: "status",
+    },
+    {
+      header: "Aktionen",
+      id: "actions",
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => deleteUser(user.userId)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => toggleBlockUser(user)}
+              className={`hover:text-yellow-700 ${
+                user.isBlocked ? "text-green-500" : "text-yellow-500"
+              }`}
+            >
+              {user.isBlocked ? (
+                <Unlock className="w-5 h-5" />
+              ) : (
+                <Ban className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        );
       },
-      {
-        header: "Aktionen",
-        id: "actions",
-        cell: ({ row }) => {
-          const user = row.original;
-          return (
-            <div className="flex gap-2">
-              <button
-                onClick={() => deleteUser(user.userId)}
-                className="text-red-600 hover:text-red-800"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => toggleBlockUser(user)}
-                className={`hover:text-yellow-700 ${
-                  user.isBlocked ? "text-green-500" : "text-yellow-500"
-                }`}
-              >
-                {user.isBlocked ? (
-                  <Unlock className="w-5 h-5" />
-                ) : (
-                  <Ban className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          );
-        },
-      },
-    ],
-    [users]
-  );
+    },
+  ], [users]);
 
   const table = useReactTable({
     data: users,
@@ -157,7 +155,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
-      {/* Header mit Logo, Film-Button & Admin-Dropdown */}
       <header className="flex items-center justify-between px-8 py-4">
         {/* Logo */}
         <Link href="/">
@@ -174,6 +171,7 @@ export default function AdminPage() {
 
         {isLoggedIn && (
           <div className="flex items-center gap-4">
+            {/* Startseite-Button */}
             <button
               onClick={() => router.push("/home")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
@@ -231,7 +229,7 @@ export default function AdminPage() {
 
       {/* Tabelle */}
       <main className="px-8 py-8">
-      <h1 className="text-5xl font-bold mb-6">Admin-Panel</h1>
+        <h1 className="text-5xl font-bold mb-6">Admin-Panel</h1>
         <h2 className="text-3xl font-bold mb-6">Benutzerverwaltung</h2>
 
         <div className="border border-gray-700 rounded-lg overflow-hidden shadow-lg">
@@ -245,7 +243,10 @@ export default function AdminPage() {
                         key={header.id}
                         className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-300 border-b border-gray-700"
                       >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -262,7 +263,10 @@ export default function AdminPage() {
                         key={cell.id}
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-100"
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </td>
                     ))}
                   </tr>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
+import { Clapperboard } from "lucide-react";
 
 export default function FavoritenPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -78,26 +79,35 @@ export default function FavoritenPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4">
         {/* Logo */}
-        <div className="relative w-[300px] h-[80px]">
-          <img
-            src="https://i.ibb.co/CpmRBD0X/image.png"
-            alt="DualStream Logo"
-            className="object-contain"
-            width={300}
-            height={80}
-          />
-        </div>
+        <Link href="/">
+          <div className="relative w-[300px] h-[80px]">
+            <img
+              src="https://i.ibb.co/CpmRBD0X/image.png"
+              alt="DualStream Logo"
+              className="object-contain"
+              width={300}
+              height={80}
+            />
+          </div>
+        </Link>
 
-        {/* Benutzer Dropdown */}
-        {isLoggedIn ? (
-          <div className="relative inline-block text-left">
-            <div>
+        {/* Rechte Seite: Benutzer Dropdown und Buttons */}
+        {isLoggedIn && (
+          <div className="flex items-center gap-4 justify-end">
+            {/* Startseite-Button */}
+            <button
+              onClick={() => router.push("/home")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
+            >
+              <Clapperboard className="w-5 h-5" />
+              Zu den Filmen
+            </button>
+
+            {/* Benutzer Dropdown */}
+            <div className="relative inline-block text-left">
               <button
                 type="button"
-                className="inline-flex items-center justify-center w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
-                id="menu-button"
-                aria-expanded="true"
-                aria-haspopup="true"
+                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
                 <svg
@@ -116,37 +126,31 @@ export default function FavoritenPage() {
                 </svg>
                 Benutzer
               </button>
-            </div>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
-                <div className="py-1">
-                  <button
-                    onClick={() => router.push("/benutzerkonto")}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                  >
-                    Benutzerkonto verwalten
-                  </button>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("token");
-                      setIsLoggedIn(false);
-                      router.push("/");
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                  <div className="py-1">
+                    <button
+                      onClick={() => router.push("/benutzerkonto")}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Benutzerkonto verwalten
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem("token");
+                        setIsLoggedIn(false);
+                        router.push("/");
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                    >
+                      Logout
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        ) : (
-          <Link href="/login">
-            <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
-              Einloggen
-            </button>
-          </Link>
         )}
       </header>
 

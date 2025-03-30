@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Clapperboard } from "lucide-react";
 
 export default function BenutzerkontoPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,7 +13,6 @@ export default function BenutzerkontoPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -46,16 +46,23 @@ export default function BenutzerkontoPage() {
           </div>
         </Link>
 
-        {/* Benutzer Dropdown */}
-        {isLoggedIn ? (
-          <div className="relative inline-block text-left">
-            <div>
+        {/* Rechte Seite: Benutzer Dropdown und Buttons */}
+        {isLoggedIn && (
+          <div className="flex items-center gap-4 justify-end">
+            {/* Startseite-Button */}
+            <button
+              onClick={() => router.push("/home")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
+            >
+              <Clapperboard className="w-5 h-5" />
+              Zu den Filmen
+            </button>
+
+            {/* Benutzer Dropdown */}
+            <div className="relative inline-block text-left">
               <button
                 type="button"
-                className="inline-flex items-center justify-center w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
-                id="menu-button"
-                aria-expanded="true"
-                aria-haspopup="true"
+                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
                 <svg
@@ -74,33 +81,27 @@ export default function BenutzerkontoPage() {
                 </svg>
                 Benutzer
               </button>
-            </div>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
-                <div className="py-1">
-                  <button
-                    onClick={() => router.push("/benutzerkonto")}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                  >
-                    Benutzerkonto verwalten
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                  <div className="py-1">
+                    <button
+                      onClick={() => router.push("/benutzerkonto")}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Benutzerkonto verwalten
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                    >
+                      Logout
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        ) : (
-          <Link href="/login">
-            <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
-              Einloggen
-            </button>
-          </Link>
         )}
       </header>
 
@@ -113,76 +114,83 @@ export default function BenutzerkontoPage() {
           Hier kannst du deine Kontoeinstellungen verwalten.
         </p>
         <div className="mt-12 w-full max-w-xl bg-gray-800 text-white p-8 rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold mb-6 text-center">Dein Benutzerkonto</h2>
-            <form
-                onSubmit={async (e) => {
-                e.preventDefault();
-                const token = localStorage.getItem("token");
-                if (!token) return;
+          <h2 className="text-2xl font-semibold mb-6 text-center">
+            Dein Benutzerkonto
+          </h2>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const token = localStorage.getItem("token");
+              if (!token) return;
 
-                try {
-                    const res = await fetch("http://localhost:4000/users/me/update", {
+              try {
+                const res = await fetch(
+                  "http://localhost:4000/users/me/update",
+                  {
                     method: "PUT",
                     headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({ name, email, password }),
-                    });
+                  }
+                );
 
-                    const data = await res.json();
-                    if (!res.ok) {
-                    setMessage(data.error || "Aktualisierung fehlgeschlagen");
-                    } else {
-                    setMessage(data.message);
-                    }
-                } catch (err) {
-                    setMessage("Ein Fehler ist aufgetreten.");
+                const data = await res.json();
+                if (!res.ok) {
+                  setMessage(data.error || "Aktualisierung fehlgeschlagen");
+                } else {
+                  setMessage(data.message);
                 }
-                }}
-                className="space-y-4"
-            >
-                <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
-                    placeholder="Neuer Name"
-                />
-                </div>
-                <div>
-                <label className="block text-sm font-medium mb-1">E-Mail</label>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
-                    placeholder="Neue E-Mail"
-                />
-                </div>
-                <div>
-                <label className="block text-sm font-medium mb-1">Passwort</label>
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
-                    placeholder="Neues Passwort"
-                />
-                </div>
-                <button
-                type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 transition text-white py-3 rounded font-semibold"
-                >
-                Änderungen speichern
-                </button>
-                {message && (
-                <p className="mt-3 text-center text-sm text-green-400">{message}</p>
-                )}
-            </form>
+              } catch (err) {
+                setMessage("Ein Fehler ist aufgetreten.");
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
+                placeholder="Neuer Name"
+              />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">E-Mail</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
+                placeholder="Neue E-Mail"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Passwort</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white"
+                placeholder="Neues Passwort"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-700 transition text-white py-3 rounded font-semibold"
+            >
+              Änderungen speichern
+            </button>
+            {message && (
+              <p className="mt-3 text-center text-sm text-green-400">
+                {message}
+              </p>
+            )}
+          </form>
+        </div>
       </main>
 
       {/* Footer */}

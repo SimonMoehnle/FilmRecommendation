@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { RatingForm } from "@/components/RatingForm";
+import { Clapperboard } from "lucide-react";
 
 interface Movie {
   title: string;
@@ -64,15 +65,15 @@ export default function MovieDetail() {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
       {/* Header mit Logo und Login/Logout-Button */}
       <header className="flex items-center justify-between px-8 py-4">
-      <Link href="/" className="relative w-[300px] h-[80px] block">
-        <img
-          src="https://i.ibb.co/CpmRBD0X/image.png"
-          alt="DualStream Logo"
-          className="object-contain w-full h-full"
-          width={300}
-          height={80}
-        />
-      </Link>
+        <Link href="/" className="relative w-[300px] h-[80px] block">
+          <img
+            src="https://i.ibb.co/CpmRBD0X/image.png"
+            alt="DualStream Logo"
+            className="object-contain w-full h-full"
+            width={300}
+            height={80}
+          />
+        </Link>
         {isLoggedIn ? (
           <div className="relative inline-block text-left">
             <div>
@@ -116,6 +117,20 @@ export default function MovieDetail() {
               Einloggen
             </button>
           </Link>
+        )}
+
+        {/* Rechte Seite: Buttons */}
+        {isLoggedIn && (
+          <div className="flex items-center gap-4">
+            {/* Startseite-Button */}
+            <button
+              onClick={() => router.push("/home")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
+            >
+              <Clapperboard className="w-5 h-5" />
+              Zu den Filmen
+            </button>
+          </div>
         )}
       </header>
 

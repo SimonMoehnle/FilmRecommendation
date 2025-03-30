@@ -112,14 +112,14 @@ export default function HomePage() {
   const toggleFavorite = async (movieId: number) => {
     const token = localStorage.getItem("token");
     const isAlreadyFavorite = favoriteIds.includes(movieId);
-  
+    const method = isAlreadyFavorite ? "DELETE" : "POST";
     const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
-      method: "POST",
+      method,
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-  
+
     if (res.ok) {
       // Direkt im State anpassen, um UI sofort zu aktualisieren
       setFavoriteIds((prev) =>
@@ -128,10 +128,13 @@ export default function HomePage() {
           : [...prev, movieId]
       );
     } else {
-      toast.error("Favorit konnte nicht gespeichert werden.");
+      toast.error(
+        isAlreadyFavorite
+          ? "Favorit konnte nicht entfernt werden."
+          : "Favorit konnte nicht gespeichert werden."
+      );
     }
   };
-  
 
   // Delete-Funktion: Nur für Admins
   const handleDeleteMovie = async (movieId: number) => {
