@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { FaRegStar } from "react-icons/fa";
+import { Trash } from "lucide-react"; // Lösch-Icon für Admins
+import { toast, Toaster } from "sonner";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);
@@ -36,8 +38,6 @@ export default function HomePage() {
 
     if (token) {
       setIsLoggedIn(true);
-
-      // Rolle aus dem JWT-Token lesen
       try {
         const decoded: any = jwtDecode(token);
         if (decoded?.role) {
@@ -47,7 +47,6 @@ export default function HomePage() {
       } catch (err) {
         console.error("Token konnte nicht dekodiert werden:", err);
       }
-
       fetchMovies(token);
     } else {
       setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
@@ -61,7 +60,6 @@ export default function HomePage() {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       setMovies(data.movies);
@@ -95,9 +93,34 @@ export default function HomePage() {
         Authorization: `Bearer ${token}`,
       },
     });
-
     if (res.ok) {
       console.log("Film als Favorit gespeichert");
+    }
+  };
+
+  // Delete-Funktion: Nur für Admins
+  const handleDeleteMovie = async (movieId: number) => {
+    if (!confirm("Willst du diesen Film wirklich löschen?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:4000/movies/${movieId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Fehler beim Löschen des Films:", errorData);
+        toast.error("Fehler beim Löschen des Films.");
+        return;
+      }
+      toast.success("Film wurde erfolgreich gelöscht.");
+      // Nach erfolgreichem Löschen die Filme neu laden
+      fetchMovies(token);
+    } catch (err) {
+      console.error("Fehler beim Löschen:", err);
+      toast.error("Fehler beim Löschen des Films.");
     }
   };
 
@@ -138,7 +161,6 @@ export default function HomePage() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     if (!token || !selectedGenre) return;
-
     try {
       const res = await fetch("http://localhost:4000/movies", {
         method: "POST",
@@ -148,19 +170,16 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           title: newTitle,
-          genre: selectedGenre, // Genre wird automatisch übergeben
+          genre: selectedGenre,
           description: newDescription,
           releaseYear: newReleaseYear,
         }),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         console.error("Fehler beim Hinzufügen des Films:", errorData);
         return;
       }
-
-      // Nach erfolgreicher Erstellung den Film neu laden
       fetchMovies(token);
       closeAddMovieModal();
     } catch (err) {
@@ -170,6 +189,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
+      <Toaster />
       <header className="flex items-center justify-between px-8 py-4">
         <Link href="/">
           <div className="relative w-[300px] h-[80px] cursor-pointer">
@@ -210,7 +230,6 @@ export default function HomePage() {
                 {userRole === "ADMIN" ? "Admin" : "Benutzer"}
               </button>
             </div>
-
             {dropdownOpen && (
               <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
                 <div className="py-1">
@@ -271,15 +290,12 @@ export default function HomePage() {
           </Link>
         )}
       </header>
-
       {error && <p className="text-red-500 text-center">{error}</p>}
-
       {isLoggedIn && (
         <main className="px-8 py-16">
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
             Entdecke alle Filme
           </h1>
-
           {/* Suchfeld */}
           <div className="max-w-md mx-auto mb-12">
             <input
@@ -290,7 +306,6 @@ export default function HomePage() {
               className="w-full p-3 rounded-lg bg-[#1e1e1e] text-white border border-red-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600"
             />
           </div>
-
           {/* Filter & Sortierung */}
           <div className="flex justify-center mb-10 relative">
             <button
@@ -313,7 +328,6 @@ export default function HomePage() {
               </svg>
               Sortieren
             </button>
-
             {showSortDropdown && (
               <div className="absolute top-12 z-10 bg-gray-800 text-white rounded shadow-lg w-60">
                 <ul>
@@ -341,7 +355,6 @@ export default function HomePage() {
               </div>
             )}
           </div>
-
           {/* Film-Gruppen nach Genre anzeigen */}
           {Object.keys(filteredMovies).map((genre) => (
             <section key={genre} className="mb-10">
@@ -357,7 +370,6 @@ export default function HomePage() {
                       <div className="text-6xl font-bold">+</div>
                     </div>
                   )}
-
                   {filteredMovies[genre]
                     .sort((a, b) => {
                       if (sortOption === "rating") {
@@ -382,16 +394,13 @@ export default function HomePage() {
                             <FaRegStar size={20} />
                           </button>
                         </div>
-
                         <div className="p-5">
                           <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
                             {movie.title}
                           </h3>
-
                           <p className="text-gray-300 text-sm mb-4 line-clamp-3">
                             {movie.description || "Imported from MovieLens"}
                           </p>
-
                           <div className="flex items-center mb-4">
                             <p className="text-white text-sm">
                               Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
@@ -399,13 +408,20 @@ export default function HomePage() {
                             <span className="text-yellow-400 ml-2">⭐</span>
                           </div>
                         </div>
-
-                        <div className="p-5 pt-0">
+                        <div className="p-5 pt-0 flex gap-2 items-center">
                           <Link href={`/movie/${movie.movieId}`}>
-                            <button className="bg-red-600 text-white py-2 px-4 rounded w-full hover:bg-red-700 transition font-semibold">
+                            <button className="bg-red-600 text-white py-2 px-4 rounded transition hover:bg-red-700 font-semibold flex-1">
                               Detailansicht
                             </button>
                           </Link>
+                          {userRole === "ADMIN" && (
+                            <button
+                              onClick={() => handleDeleteMovie(movie.movieId)}
+                              className="bg-blue-900 text-white w-12 h-11 flex items-center justify-center rounded transition hover:bg-blue-800"
+                            >
+                              <Trash size={20} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -415,7 +431,6 @@ export default function HomePage() {
           ))}
         </main>
       )}
-
       <footer className="bg-black/80 text-white px-8 py-10 text-sm">
         <div className="max-w-6xl mx-auto flex flex-col space-y-4">
           <p className="mb-4">Fragen? Einfach anrufen: 0800-000-5677</p>
@@ -512,7 +527,6 @@ export default function HomePage() {
           <p className="mt-4 text-gray-400">DualiStream Deutschland</p>
         </div>
       </footer>
-
       {/* Modal zum Hinzufügen eines Films */}
       {showAddMovieModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
