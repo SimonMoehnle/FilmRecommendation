@@ -7,6 +7,7 @@ import { jwtDecode } from "jwt-decode";
 import { FaRegStar, FaStar } from "react-icons/fa";
 import { Trash } from "lucide-react"; // Lösch-Icon für Admins
 import { toast, Toaster } from "sonner";
+import { useParams } from "next/navigation";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);

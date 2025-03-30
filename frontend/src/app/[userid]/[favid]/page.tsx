@@ -2,36 +2,47 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { Clapperboard } from "lucide-react";
 
 export default function FavoritenPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [favorites, setFavorites] = useState([]); // Definiere den favorites-State
+  const [favorites, setFavorites] = useState([]);
   const router = useRouter();
+  const params = useParams(); // Direkt am Anfang aufrufen
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-      fetchFavorites(token); // Hole die Favoriten
-    } else {
-      router.push("/login"); // Weiterleitung zur Login-Seite, wenn nicht eingeloggt
+    // Versuche zuerst, die Benutzer-ID aus den URL-Parametern zu erhalten
+    let sharedUserId = params?.userId;
+
+    // Falls in der URL keine userId steht, aber ein Token vorhanden ist, hole die userId aus dem Token
+    if (!sharedUserId && token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        sharedUserId = decoded.userId;
+      } catch (error) {
+        console.error("Fehler beim Dekodieren des Tokens:", error);
+      }
     }
-  }, [router]);
 
-  const fetchFavorites = async (token: string) => {
+    // Nur wenn wir eine Benutzer-ID haben, laden wir die Favoriten; ansonsten nur Redirect, wenn gar nichts verfügbar ist.
+    if (sharedUserId !== undefined && sharedUserId !== null) {
+      // Setze den Login-Status basierend auf dem Vorhandensein eines Tokens.
+      setIsLoggedIn(!!token);
+      fetchFavorites(sharedUserId, token);
+    } else {
+      // Wenn weder URL-Parameter noch Token vorhanden sind, redirecte zur Login-Seite.
+      router.push("/login");
+    }
+  }, [params, router]);
+
+  const fetchFavorites = async (userId: string, token?: string) => {
     try {
-      const decoded: any = jwtDecode(token); // JWT-Token dekodieren
-      const userId = decoded.userId; // Benutzer-ID aus dem Token extrahieren
-
-      const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`http://localhost:4000/favorites/${userId}`, { headers });
 
       if (!res.ok) {
         throw new Error("Fehler beim Abrufen der Favoriten");
@@ -45,7 +56,7 @@ export default function FavoritenPage() {
           index === self.findIndex((m) => m.movieId === movie.movieId)
       );
 
-      setFavorites(uniqueFavorites); // Favoriten im State speichern
+      setFavorites(uniqueFavorites);
     } catch (error) {
       console.error("Fehler beim Abrufen der Favoriten:", error);
     }
@@ -58,9 +69,7 @@ export default function FavoritenPage() {
     try {
       const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) throw new Error("Fehler beim Entfernen aus Favoriten");
@@ -94,7 +103,6 @@ export default function FavoritenPage() {
         {/* Rechte Seite: Benutzer Dropdown und Buttons */}
         {isLoggedIn && (
           <div className="flex items-center gap-4 justify-end">
-            {/* Startseite-Button */}
             <button
               onClick={() => router.push("/home")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
@@ -103,7 +111,6 @@ export default function FavoritenPage() {
               Zu den Filmen
             </button>
 
-            {/* Benutzer Dropdown */}
             <div className="relative inline-block text-left">
               <button
                 type="button"
@@ -171,7 +178,7 @@ export default function FavoritenPage() {
             ) : (
               favorites.map((movie: any, index: number) => (
                 <div
-                  key={`${movie.movieId?.low ?? index}-${index}`} // Eindeutiger Key
+                  key={`${movie.movieId?.low ?? index}-${index}`}
                   className="bg-[#1e2736] rounded-lg border border-red-600 p-4 shadow-md flex flex-col justify-between"
                 >
                   <Link href={`/movie/${movie.movieId?.low ?? movie.movieId}`}>
