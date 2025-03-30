@@ -50,18 +50,30 @@ export async function removeFavorite(userId, movieId) {
     }
   }
 
-export async function getFavoritesOfUser(userId) {
-  const session = getSession();
-  try {
-    const result = await session.run(`
-      MATCH (u:User {userId: $userId})-[:FAVORITED]->(m:Movie)
-      RETURN m {
-        .movieId, .title, .genre, .description, .releaseYear, .averageRating
-      } AS movie
-    `, { userId });
+  export async function getFavoritesOfUser(userId) {
+    const session = getSession();
+    try {
+      const result = await session.run(
+        `
+        MATCH (u:User {userId: $userId})-[:FAVORITED]->(m:Movie)
+        RETURN m {
+          .movieId, .title, .genre, .description, .releaseYear, .averageRating
+        } AS movie
+      `,
+        { userId }
+      );
   
-    return result.records.map(r => r.get("movie"));
-  } finally {
-    await session.close();
+      return result.records.map((r) => {
+        const movie = r.get("movie");
+        return {
+          ...movie,
+          movieId: movie.movieId?.low ?? movie.movieId,
+          releaseYear: movie.releaseYear?.low ?? movie.releaseYear,
+          averageRating: movie.averageRating?.low ?? movie.averageRating,
+        };
+      });
+    } finally {
+      await session.close();
+    }
   }
-}
+  

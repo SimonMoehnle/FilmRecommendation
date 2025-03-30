@@ -4,7 +4,7 @@ import React, { useEffect, useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
-import { FaRegStar } from "react-icons/fa";
+import { FaRegStar, FaStar } from "react-icons/fa";
 import { Trash } from "lucide-react"; // Lösch-Icon für Admins
 import { toast, Toaster } from "sonner";
 
@@ -18,7 +18,7 @@ export default function HomePage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sortOption, setSortOption] = useState("default");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [favoriteIds, setFavoriteIds] = useState([]); // Neuer State für favorisierte Film-IDs
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -111,16 +111,27 @@ export default function HomePage() {
   // Toggle-Funktion: Wenn der Film bereits favorisiert ist, lösche ihn, sonst füge ihn hinzu
   const toggleFavorite = async (movieId: number) => {
     const token = localStorage.getItem("token");
+    const isAlreadyFavorite = favoriteIds.includes(movieId);
+  
     const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+  
     if (res.ok) {
-      console.log("Film als Favorit gespeichert");
+      // Direkt im State anpassen, um UI sofort zu aktualisieren
+      setFavoriteIds((prev) =>
+        isAlreadyFavorite
+          ? prev.filter((id) => id !== movieId)
+          : [...prev, movieId]
+      );
+    } else {
+      toast.error("Favorit konnte nicht gespeichert werden.");
     }
   };
+  
 
   // Delete-Funktion: Nur für Admins
   const handleDeleteMovie = async (movieId: number) => {
@@ -415,7 +426,9 @@ export default function HomePage() {
                             onClick={() => toggleFavorite(movie.movieId)}
                             className="absolute top-2 right-2 z-10 text-yellow-400 hover:text-yellow-300"
                           >
-                            {movie.isFavorite ? <FaStar size={20} /> : <FaRegStar size={20} />}
+                            {favoriteIds.includes(movie.movieId)
+                              ? <FaStar size={20} />
+                              : <FaRegStar size={20} />}
                           </button>
                         </div>
                         <div className="p-5">
