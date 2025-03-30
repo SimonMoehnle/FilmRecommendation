@@ -12,6 +12,7 @@ import { jwtDecode } from "jwt-decode";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GenreTrendChart from "@/components/GenreTrendChart";
+import LogViewer from "@/components/LogViewer";
 
 
 
@@ -274,6 +275,7 @@ export default function AdminPage() {
           <h2 className="text-3xl font-bold mb-6">Genre-Bewertungstrends</h2>
           <GenreTrendChart />
         </section>
+        <LogViewer />
       </main>
     </div>
   );
