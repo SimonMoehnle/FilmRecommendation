@@ -54,36 +54,34 @@ export default async function favoriteRoutes(fastify, options) {
     return reply.send({ favorites });
   });
 
-  // Neue Route: Film zu Favoritenliste hinzufügen
-  fastify.post("/favorites", async (req, reply) => {
-    const { user } = req; // wird aus Token extrahiert
-    const { movieId } = req.body;
+// Neue Route: Filme aus einer bestimmten Favoritenliste abrufen
+fastify.get("/favorites/:userId/:favId", async (req, reply) => {
+  const { userId, favId } = req.params;
+  const numericUserId = parseInt(userId, 10);
+  
+  // Wenn favId dem Default-Wert entspricht, nutze die Favoriten, die über FAVORITED gespeichert wurden.
+  if (favId === `${userId}-main`) {
+    const favorites = await getFavoritesOfUser(numericUserId);
+    return reply.send({ favorites });
+  }
+  
+  // Andernfalls: Suche im FavoriteList-Knoten
+  const result = await db.run(
+    `MATCH (u:User {userId: $numericUserId})-[:OWNS]->(f:FavoriteList {id: $favId})-[:INCLUDES]->(m:Movie)
+     RETURN m`,
+    { numericUserId, favId }
+  );
+  
+  const movies = result.records.map((r) => r.get("m").properties);
+  reply.send({ favorites: movies });
+});
 
-    const favId = `${user.id}-main`; // z. B. statisch "main", oder später auswählbar
-
-    await db.run(
-      `MERGE (u:User {userId: $userId})
-       MERGE (m:Movie {movieId: $movieId})
-       MERGE (f:FavoriteList {id: $favId})
-       MERGE (u)-[:OWNS]->(f)
-       MERGE (f)-[:INCLUDES]->(m)`,
-      { userId: user.id, movieId: Number(movieId), favId }
-    );
-
-    reply.send({ success: true });
-  });
-
-  // Neue Route: Filme aus einer bestimmten Favoritenliste abrufen
-  fastify.get("/favorites/:userId/:favId", async (req, reply) => {
-    const { userId, favId } = req.params;
-
-    const result = await db.run(
-      `MATCH (u:User {userId: $userId})-[:OWNS]->(f:FavoriteList {id: $favId})-[:INCLUDES]->(m:Movie)
-       RETURN m`,
-      { userId, favId }
-    );
-
-    const movies = result.records.map((r) => r.get("m").properties);
-    reply.send({ movies });
-  });
+  
+    
+    // Route: Alle Favoriten eines Benutzers abrufen
+    fastify.get("/favorites", async (req, reply) => {
+      const userId = req.user.userId; // Benutzer-ID aus dem Token
+      const favorites = await getFavoritesOfUser(userId);
+      return reply.send({ favorites });
+    });
 }

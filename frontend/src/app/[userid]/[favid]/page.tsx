@@ -11,14 +11,15 @@ export default function FavoritenPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const router = useRouter();
-  const params = useParams(); // Direkt am Anfang aufrufen
+  const params = useParams(); // Erwartet nun { userId, favId }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    // Versuche zuerst, die Benutzer-ID aus den URL-Parametern zu erhalten
+    // Versuche, die userId und favId aus den URL-Parametern zu erhalten
     let sharedUserId = params?.userId;
+    let sharedFavId = params?.favId;
 
-    // Falls in der URL keine userId steht, aber ein Token vorhanden ist, hole die userId aus dem Token
+    // Falls in der URL kein userId steht, aber ein Token vorhanden ist, hole die userId aus dem Token
     if (!sharedUserId && token) {
       try {
         const decoded: any = jwtDecode(token);
@@ -28,26 +29,38 @@ export default function FavoritenPage() {
       }
     }
 
-    // Nur wenn wir eine Benutzer-ID haben, laden wir die Favoriten; ansonsten nur Redirect, wenn gar nichts verfügbar ist.
+    // Wenn kein favId vorhanden ist, kannst du ggf. einen Default-Wert setzen, z. B. `${userId}-main`
+    if (sharedUserId && !sharedFavId) {
+      sharedFavId = `${sharedUserId}-main`;
+    }
+
+    // Falls wir eine userId haben, rufe die Favoritenliste ab.
     if (sharedUserId !== undefined && sharedUserId !== null) {
-      // Setze den Login-Status basierend auf dem Vorhandensein eines Tokens.
       setIsLoggedIn(!!token);
-      fetchFavorites(sharedUserId, token);
+      // Passe den Endpunkt an, wenn favId vorhanden ist:
+      if (sharedFavId) {
+        fetchFavorites(sharedUserId, sharedFavId, token);
+      } else {
+        // Fallback: Standardroute, falls kein favId übergeben wird
+        fetchFavorites(sharedUserId, undefined, token);
+      }
     } else {
-      // Wenn weder URL-Parameter noch Token vorhanden sind, redirecte zur Login-Seite.
       router.push("/login");
     }
   }, [params, router]);
 
-  const fetchFavorites = async (userId: string, token?: string) => {
+  // Neue fetchFavorites-Funktion, die ggf. die spezifische Route aufruft:
+  const fetchFavorites = async (userId: string, favId?: string, token?: string) => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`http://localhost:4000/favorites/${userId}`, { headers });
-
+      let url = `http://localhost:4000/favorites/${userId}`;
+      if (favId) {
+        url = `http://localhost:4000/favorites/${userId}/${favId}`;
+      }
+      const res = await fetch(url, { headers });
       if (!res.ok) {
         throw new Error("Fehler beim Abrufen der Favoriten");
       }
-
       const data = await res.json();
 
       // Entferne Duplikate basierend auf der movieId
@@ -55,7 +68,6 @@ export default function FavoritenPage() {
         (movie, index, self) =>
           index === self.findIndex((m) => m.movieId === movie.movieId)
       );
-
       setFavorites(uniqueFavorites);
     } catch (error) {
       console.error("Fehler beim Abrufen der Favoriten:", error);
