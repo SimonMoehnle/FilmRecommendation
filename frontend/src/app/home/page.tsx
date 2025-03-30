@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
-import { FaRegStar, FaStar } from "react-icons/fa";
+import { FaRegStar } from "react-icons/fa";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);
@@ -19,19 +19,25 @@ export default function HomePage() {
   const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  // States für Film-Erstellung (Admin)
+  const [showAddMovieModal, setShowAddMovieModal] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newReleaseYear, setNewReleaseYear] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     try {
       const decoded: any = jwtDecode(token);
-    }
-    catch (err) {
+    } catch (err) {
       console.error("Token konnte nicht dekodiert werden:", err);
-    }    
+    }
 
     if (token) {
       setIsLoggedIn(true);
 
-      // ✅ Rolle aus dem JWT-Token lesen mit jwt-decode
+      // Rolle aus dem JWT-Token lesen
       try {
         const decoded: any = jwtDecode(token);
         if (decoded?.role) {
@@ -89,13 +95,13 @@ export default function HomePage() {
         Authorization: `Bearer ${token}`,
       },
     });
-    
 
     if (res.ok) {
       console.log("Film als Favorit gespeichert");
     }
   };
 
+  // Filter-Funktionalität
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredMovies(groupedMovies);
@@ -112,6 +118,55 @@ export default function HomePage() {
       setFilteredMovies(filtered);
     }
   }, [searchTerm, groupedMovies]);
+
+  // Öffnet das Modal zur Filme-Erstellung und setzt das Genre voraus
+  const openAddMovieModal = (genre: string) => {
+    setSelectedGenre(genre);
+    setShowAddMovieModal(true);
+  };
+
+  const closeAddMovieModal = () => {
+    setShowAddMovieModal(false);
+    setSelectedGenre(null);
+    setNewTitle("");
+    setNewDescription("");
+    setNewReleaseYear("");
+  };
+
+  // Film hinzufügen (POST)
+  const handleAddMovie = async (e: FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token || !selectedGenre) return;
+
+    try {
+      const res = await fetch("http://localhost:4000/movies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: newTitle,
+          genre: selectedGenre, // Genre wird automatisch übergeben
+          description: newDescription,
+          releaseYear: newReleaseYear,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Fehler beim Hinzufügen des Films:", errorData);
+        return;
+      }
+
+      // Nach erfolgreicher Erstellung den Film neu laden
+      fetchMovies(token);
+      closeAddMovieModal();
+    } catch (err) {
+      console.error("Fehler beim Hinzufügen des Films:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
@@ -138,64 +193,75 @@ export default function HomePage() {
                 aria-haspopup="true"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
                 {userRole === "ADMIN" ? "Admin" : "Benutzer"}
               </button>
             </div>
 
             {dropdownOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
-                  <div className="py-1">
-                    {userRole === "ADMIN" ? (
-                      <>
-                        <button
-                          onClick={() => router.push("/admin/panel")}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Admin-Panel
-                        </button>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                        >
-                          Logout
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => router.push("/benutzerkonto")}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Benutzerkonto verwalten
-                        </button>
-                        <button
-                          onClick={() => {
-                            const token = localStorage.getItem("token");
-                            if (token) {
-                              const decoded: any = jwtDecode(token);
-                              if (decoded?.userId) {
-                                router.push(`/${decoded.userId}/favoritenliste`);
-                              }
+              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                <div className="py-1">
+                  {userRole === "ADMIN" ? (
+                    <>
+                      <button
+                        onClick={() => router.push("/admin/panel")}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                      >
+                        Admin-Panel
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => router.push("/benutzerkonto")}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                      >
+                        Benutzerkonto verwalten
+                      </button>
+                      <button
+                        onClick={() => {
+                          const token = localStorage.getItem("token");
+                          if (token) {
+                            const decoded: any = jwtDecode(token);
+                            if (decoded?.userId) {
+                              router.push(`/${decoded.userId}/favoritenliste`);
                             }
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                        >
-                          Meine Favoriten
-                        </button>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                        >
-                          Logout
-                        </button>
-                      </>
-                    )}
-                  </div>
+                          }
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                      >
+                        Meine Favoriten
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         ) : (
           <Link href="/login">
@@ -254,16 +320,6 @@ export default function HomePage() {
                   <li>
                     <button
                       className={`w-full text-left px-4 py-2 hover:bg-gray-700 ${
-                        sortOption === "default" ? "bg-gray-700" : ""
-                      }`}
-                      onClick={() => setSortOption("default")}
-                    >
-                      Standard (nach Genre)
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-700 ${
                         sortOption === "rating" ? "bg-gray-700" : ""
                       }`}
                       onClick={() => setSortOption("rating")}
@@ -292,6 +348,16 @@ export default function HomePage() {
               <h2 className="text-2xl font-semibold mb-6">{genre}</h2>
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-transparent">
                 <div className="flex gap-6 pb-4 w-max">
+                  {/* Plus-Karte nur für Admins */}
+                  {userRole === "ADMIN" && (
+                    <div
+                      className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex items-center justify-center cursor-pointer"
+                      onClick={() => openAddMovieModal(genre)}
+                    >
+                      <div className="text-6xl font-bold">+</div>
+                    </div>
+                  )}
+
                   {filteredMovies[genre]
                     .sort((a, b) => {
                       if (sortOption === "rating") {
@@ -299,7 +365,7 @@ export default function HomePage() {
                       } else if (sortOption === "title") {
                         return a.title.localeCompare(b.title);
                       }
-                      return 0; // default: keine Sortierung
+                      return 0;
                     })
                     .slice(0, searchTerm.trim() === "" ? 30 : undefined)
                     .map((movie: any) => (
@@ -349,43 +415,155 @@ export default function HomePage() {
           ))}
         </main>
       )}
+
       <footer className="bg-black/80 text-white px-8 py-10 text-sm">
         <div className="max-w-6xl mx-auto flex flex-col space-y-4">
-          {/* Hotline / Kontakt */}
           <p className="mb-4">Fragen? Einfach anrufen: 0800-000-5677</p>
-
-          {/* Mehrspaltiges Link-Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <ul className="space-y-2">
-              <li><a href="#" className="hover:underline">Häufig gestellte Fragen (FAQ)</a></li>
-              <li><a href="#" className="hover:underline">Medien-Center</a></li>
-              <li><a href="#" className="hover:underline">Geschenkkarten kaufen</a></li>
-              <li><a href="#" className="hover:underline">Datenschutz</a></li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Häufig gestellte Fragen (FAQ)
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Medien-Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Geschenkkarten kaufen
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Datenschutz
+                </a>
+              </li>
             </ul>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:underline">Möglichkeit kündigen</a></li>
-              <li><a href="#" className="hover:underline">Hilfe-Center</a></li>
-              <li><a href="#" className="hover:underline">Karriere</a></li>
-              <li><a href="#" className="hover:underline">Rechtliche Hinweise</a></li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Möglichkeit kündigen
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Hilfe-Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Karriere
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Rechtliche Hinweise
+                </a>
+              </li>
             </ul>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:underline">Konto</a></li>
-              <li><a href="#" className="hover:underline">DualiStream Shop</a></li>
-              <li><a href="#" className="hover:underline">Nutzungsbedingungen</a></li>
-              <li><a href="#" className="hover:underline">Impressum</a></li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Konto
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  DualiStream Shop
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Nutzungsbedingungen
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Impressum
+                </a>
+              </li>
             </ul>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:underline">Cookie-Einstellungen</a></li>
-              <li><a href="#" className="hover:underline">Kontakt</a></li>
-              <li><a href="#" className="hover:underline">Wahlmöglichkeiten für Werbung</a></li>
-              <li><a href="#" className="hover:underline">Nur auf DualiStream</a></li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Cookie-Einstellungen
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Kontakt
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Wahlmöglichkeiten für Werbung
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:underline">
+                  Nur auf DualiStream
+                </a>
+              </li>
             </ul>
           </div>
-
-          {/* Standort */}
           <p className="mt-4 text-gray-400">DualiStream Deutschland</p>
         </div>
       </footer>
+
+      {/* Modal zum Hinzufügen eines Films */}
+      {showAddMovieModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-gray-800 p-6 rounded-lg w-96">
+            <h2 className="text-2xl mb-4">
+              Film hinzufügen – Genre: {selectedGenre}
+            </h2>
+            <form onSubmit={handleAddMovie} className="flex flex-col gap-4">
+              <input
+                type="text"
+                placeholder="Titel"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="p-2 rounded bg-[#1e1e1e] text-white border border-red-600"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Beschreibung"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="p-2 rounded bg-[#1e1e1e] text-white border border-red-600"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Release Year"
+                value={newReleaseYear}
+                onChange={(e) => setNewReleaseYear(e.target.value)}
+                className="p-2 rounded bg-[#1e1e1e] text-white border border-red-600"
+                required
+              />
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={closeAddMovieModal}
+                  className="bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="submit"
+                  className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded"
+                >
+                  Film erstellen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
