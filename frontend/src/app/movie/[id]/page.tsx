@@ -22,7 +22,7 @@ export default function MovieDetail() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Zustand für Dropdown
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -53,9 +53,9 @@ export default function MovieDetail() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Token aus dem localStorage entfernen
-    setIsLoggedIn(false); // Zustand zurücksetzen
-    router.push("/"); // Zur Landing-Seite weiterleiten
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/");
   };
 
   if (loading) return <div className="text-white p-8">Lade Film...</div>;
@@ -63,65 +63,23 @@ export default function MovieDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
-      {/* Header mit Logo und Login/Logout-Button */}
       <header className="flex items-center justify-between px-8 py-4">
-        <Link href="/" className="relative w-[300px] h-[80px] block">
-          <img
-            src="https://i.ibb.co/CpmRBD0X/image.png"
-            alt="DualStream Logo"
-            className="object-contain w-full h-full"
-            width={300}
-            height={80}
-          />
-        </Link>
-        {isLoggedIn ? (
-          <div className="relative inline-block text-left">
-            <div>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
-                id="menu-button"
-                aria-expanded="true"
-                aria-haspopup="true"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Benutzer
-              </button>
-            </div>
-
-            {dropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
-                <div className="py-1">
-                  <button
-                    onClick={() => router.push("/benutzerkonto")}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
-                  >
-                    Benutzerkonto verwalten
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* Logo */}
+        <Link href="/">
+          <div className="relative w-[300px] h-[80px] cursor-pointer">
+            <img
+              src="https://i.ibb.co/CpmRBD0X/image.png"
+              alt="DualStream Logo"
+              className="object-contain"
+              width={300}
+              height={80}
+            />
           </div>
-        ) : (
-          <Link href="/login">
-            <button className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
-              Einloggen
-            </button>
-          </Link>
-        )}
+        </Link>
 
-        {/* Rechte Seite: Buttons */}
+        {/* Rechte Seite: Benutzer Dropdown und Buttons */}
         {isLoggedIn && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 justify-end">
             {/* Startseite-Button */}
             <button
               onClick={() => router.push("/home")}
@@ -130,6 +88,50 @@ export default function MovieDetail() {
               <Clapperboard className="w-5 h-5" />
               Zu den Filmen
             </button>
+
+            {/* Benutzer Dropdown */}
+            <div className="relative inline-block text-left">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5.121 17.804A13.937 13.937 0 0112 15c3.866 0 7.36 1.567 9.879 4.096M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                Benutzer
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-black/10 focus:outline-none">
+                  <div className="py-1">
+                    <button
+                      onClick={() => router.push("/benutzerkonto")}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                    >
+                      Benutzerkonto verwalten
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </header>
