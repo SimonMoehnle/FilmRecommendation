@@ -3,29 +3,45 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode"; // Annahme: Default-Export verwenden
 import { Clapperboard } from "lucide-react";
+
+// Typ für den dekodierten JWT-Token
+interface DecodedToken {
+  userId: number;
+  // Weitere Eigenschaften können hier ergänzt werden
+}
+
+// Interface für ein Favoriten-Filmobjekt
+interface FavoriteMovie {
+  movieId: number | { low: number };
+  title: string;
+  description?: string;
+  genre?: string;
+  averageRating?: number;
+  // Weitere Felder je nach API-Antwort ergänzen
+}
 
 export default function FavoritenPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [favorites, setFavorites] = useState([]); // Definiere den favorites-State
+  const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      fetchFavorites(token); // Hole die Favoriten
+      fetchFavorites(token);
     } else {
-      router.push("/login"); // Weiterleitung zur Login-Seite, wenn nicht eingeloggt
+      router.push("/login");
     }
   }, [router]);
 
   const fetchFavorites = async (token: string) => {
     try {
-      const decoded: any = jwtDecode(token); // JWT-Token dekodieren
-      const userId = decoded.userId; // Benutzer-ID aus dem Token extrahieren
+      const decoded = jwtDecode<DecodedToken>(token);
+      const userId = decoded.userId;
 
       const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
         headers: {
@@ -37,15 +53,9 @@ export default function FavoritenPage() {
         throw new Error("Fehler beim Abrufen der Favoriten");
       }
 
-      const data = await res.json();
-
-      // Entferne Duplikate basierend auf der movieId
-      const uniqueFavorites = data.favorites.filter(
-        (movie, index, self) =>
-          index === self.findIndex((m) => m.movieId === movie.movieId)
-      );
-
-      setFavorites(uniqueFavorites); // Favoriten im State speichern
+      // Hier wird angenommen, dass die API ein Array vom Typ FavoriteMovie zurückgibt
+      const data: FavoriteMovie[] = await res.json();
+      setFavorites(data);
     } catch (error) {
       console.error("Fehler beim Abrufen der Favoriten:", error);
     }
@@ -56,18 +66,23 @@ export default function FavoritenPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:4000/movies/${movieId}/favorite`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Fehler beim Entfernen aus Favoriten");
 
-      // Favoritenliste aktualisieren
+      // Favoritenliste aktualisieren: Nutze einen Typ-Check, ob movieId ein Objekt ist oder nicht
       setFavorites((prev) =>
-        prev.filter((movie) => (movie.movieId?.low ?? movie.movieId) !== movieId)
+        prev.filter((movie: FavoriteMovie) =>
+          (typeof movie.movieId === "object" ? movie.movieId.low : movie.movieId) !== movieId
+        )
       );
     } catch (error) {
       console.error("Fehler beim Entfernen aus Favoriten:", error);
@@ -78,7 +93,6 @@ export default function FavoritenPage() {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4">
-        {/* Logo */}
         <Link href="/">
           <div className="relative w-[300px] h-[80px]">
             <img
@@ -91,10 +105,8 @@ export default function FavoritenPage() {
           </div>
         </Link>
 
-        {/* Rechte Seite: Benutzer Dropdown und Buttons */}
         {isLoggedIn && (
           <div className="flex items-center gap-4 justify-end">
-            {/* Startseite-Button */}
             <button
               onClick={() => router.push("/home")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition flex items-center gap-2"
@@ -103,7 +115,6 @@ export default function FavoritenPage() {
               Zu den Filmen
             </button>
 
-            {/* Benutzer Dropdown */}
             <div className="relative inline-block text-left">
               <button
                 type="button"
@@ -169,12 +180,22 @@ export default function FavoritenPage() {
                 Noch keine Favoriten gespeichert.
               </div>
             ) : (
-              favorites.map((movie: any, index: number) => (
+              favorites.map((movie: FavoriteMovie, index: number) => (
                 <div
-                  key={`${movie.movieId?.low ?? index}-${index}`} // Eindeutiger Key
+                  key={`${
+                    typeof movie.movieId === "object"
+                      ? movie.movieId.low
+                      : movie.movieId
+                  }-${index}`}
                   className="bg-[#1e2736] rounded-lg border border-red-600 p-4 shadow-md flex flex-col justify-between"
                 >
-                  <Link href={`/movie/${movie.movieId?.low ?? movie.movieId}`}>
+                  <Link
+                    href={`/movie/${
+                      typeof movie.movieId === "object"
+                        ? movie.movieId.low
+                        : movie.movieId
+                    }`}
+                  >
                     <h2 className="text-xl font-bold mb-2 cursor-pointer hover:underline">
                       {movie.title}
                     </h2>
@@ -190,7 +211,11 @@ export default function FavoritenPage() {
                   </p>
                   <button
                     onClick={() =>
-                      handleRemoveFavorite(movie.movieId?.low ?? movie.movieId)
+                      handleRemoveFavorite(
+                        typeof movie.movieId === "object"
+                          ? movie.movieId.low
+                          : movie.movieId
+                      )
                     }
                     className="mt-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
                   >
