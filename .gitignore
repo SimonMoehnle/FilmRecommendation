@@ -12,15 +12,8 @@ build/
 .env
 *.env
 
-# Neo4j (lokale Datenbank – NICHT versionieren)
-neo4j/data/
-neo4j/import/
-neo4j/plugins/
-neo4j/logs/
-neo4j/*.dump
 
 # Docker
-*.log
 docker-compose.override.yml
 
 # IDEs / Editor
