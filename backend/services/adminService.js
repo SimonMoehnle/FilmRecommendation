@@ -1,5 +1,5 @@
 import { getSession } from "../db.js";
-import bcrypt from "bcryptjs"; // oder bcrypt, je nachdem, was du nutzt
+import bcrypt from "bcryptjs"; 
 
 export async function registerAdmin(name, email, password) {
   const session = getSession();
@@ -74,7 +74,7 @@ export async function blockUser(userId, block) {
 
 // Funktion zur Abfrage von Genre-Trends
 export async function getGenreTrends(days = 30, groupBy = "day") {
-  const session = getSession(); // Stelle sicher, dass getSession() ein Neo4j-Session-Objekt zurückgibt!
+  const session = getSession(); 
   const baseParams = { days: Number(days) };
 
   const query =
@@ -111,7 +111,7 @@ export async function getGenreTrends(days = 30, groupBy = "day") {
       ratingCount: record.get("ratingCount").toNumber?.() ?? record.get("ratingCount"),
     }));
 
-    return { data: mapped }; // Rückgabe als Objekt
+    return { data: mapped }; 
   } catch (error) {
     console.error("❌ Fehler in getGenreTrends():", error);
     return { error: "Fehler beim Abrufen der Genre-Trends" };

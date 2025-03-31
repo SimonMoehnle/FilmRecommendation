@@ -50,7 +50,7 @@ export default function MovieDetail() {
       setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
     } else {
       setIsLoggedIn(true);
-      // Token dekodieren, um z. B. die Rolle zu ermitteln
+      // Token dekodieren, um die Rolle zu ermitteln
       try {
         const decoded: any = jwtDecode(token);
         if (decoded?.role) {
@@ -72,7 +72,7 @@ export default function MovieDetail() {
       const data = await res.json();
       const m = data.movie;
 
-      // Konvertiere Neo4j-Integer in normale Zahlen (falls notwendig)
+      // Konvertiere Neo4j-Integer in normale Zahlen
       if (m) {
         m.movieId = typeof m.movieId === "object" ? m.movieId.low : m.movieId;
         m.releaseYear =

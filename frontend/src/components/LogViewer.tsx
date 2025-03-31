@@ -48,7 +48,6 @@ export default function LogViewer() {
     };
   };
 
-  // Extrahiert aus der Logzeile den HTTP-Status und liefert ein passendes Icon
   const getStatusIcon = (line: string) => {
     const match = line.match(/→ (\d{3})/);
     const code = match ? parseInt(match[1]) : null;

@@ -199,7 +199,7 @@ export async function deleteAllMovies() {
 export async function getMoviesByGenre(genre) {
   const session = driver.session();
   try {
-    console.log("Genre-Filter:", genre); // <-- DEBUG
+    console.log("Genre-Filter:", genre); 
 
     const result = await session.run(
       `
@@ -209,7 +209,7 @@ export async function getMoviesByGenre(genre) {
       { genre }
     );
 
-    console.log("Anzahl gefundener Filme:", result.records.length); // <-- DEBUG
+    console.log("Anzahl gefundener Filme:", result.records.length); 
 
     return result.records.map(record => {
       const props = record.get("m").properties;

@@ -14,14 +14,11 @@ export default function FavoritenPage() {
   const params = useParams(); // Direkt am Anfang aufrufen
 
   useEffect(() => {
-    // Wenn eine userId in der URL vorhanden ist, handelt es sich um einen Shared-Link.
+   
     const urlUserId = params?.userId;
     if (urlUserId) {
-      // Im Shared-Modus: Verwende den URL-Parameter und setze den Default-FavId.
-      const sharedFavId = `${urlUserId}-main`;
-      // Setze den Login-Status nicht über den Token – wir fordern hier eine öffentliche Abfrage.
       setIsLoggedIn(false);
-      fetchFavorites(urlUserId, sharedFavId, undefined);
+      fetchFavorites(Number(urlUserId), undefined);
     } else {
       // Falls keine userId in der URL vorhanden ist, arbeite wie bisher mit Token.
       const token = localStorage.getItem("token");
@@ -29,9 +26,8 @@ export default function FavoritenPage() {
         try {
           const decoded: any = jwtDecode(token);
           const sharedUserId = decoded.userId;
-          const sharedFavId = `${sharedUserId}-main`;
           setIsLoggedIn(true);
-          fetchFavorites(sharedUserId, sharedFavId, token);
+          fetchFavorites(sharedUserId, token);
         } catch (error) {
           console.error("Fehler beim Dekodieren des Tokens:", error);
         }
@@ -40,19 +36,8 @@ export default function FavoritenPage() {
       }
     }
     const token = localStorage.getItem("token");
-    // Deklariere sharedUserId als number | undefined
     let sharedUserId: number | undefined;
 
-    // Versuche, sharedUserId aus URL-Parametern zu holen und in eine Zahl zu parsen
-    const param = normalizeParam(params?.userId);
-    if (param !== undefined) {
-      const parsedId = parseInt(param, 10);
-      if (!isNaN(parsedId)) {
-        sharedUserId = parsedId;
-      }
-    }
-
-    // Falls keine gültige userId in der URL vorhanden ist, versuche, sie aus dem Token zu extrahieren
     if (sharedUserId === undefined && token) {
       try {
         const decoded: any = jwtDecode(token);
@@ -93,7 +78,6 @@ export default function FavoritenPage() {
   
       const data = await res.json();
   
-      // Entferne Duplikate basierend auf der movieId
       const uniqueFavorites = data.favorites.filter(
         (movie: any, index: number, self: any[]) =>
           index === self.findIndex((m) => m.movieId === movie.movieId)

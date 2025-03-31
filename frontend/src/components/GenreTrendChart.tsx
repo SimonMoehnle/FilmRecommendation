@@ -21,7 +21,7 @@ interface TrendData {
   ratingCount: number;
 }
 
-// 🟦 Eigener Tooltip mit dunkelblauem Hintergrund & gerundeten Werten
+// Eigener Tooltip mit dunkelblauem Hintergrund & gerundeten Werten
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -48,13 +48,10 @@ export default function GenreTrendChart() {
         const token = localStorage.getItem("token"); // Oder wo auch immer du das Token speicherst
   
         if (!token) {
-          console.warn("🚫 Kein Token gefunden");
+          console.warn("Kein Token gefunden");
           return;
         }
-  
-        // Optional: JWT decode, falls du Infos aus dem Token brauchst
-        // const decoded = jwtDecode(token);
-        // console.log("Decoded Token:", decoded);
+
   
         const res = await fetch(
           `http://localhost:4000/stats/genre-trends?range=${range}&groupBy=day`, {

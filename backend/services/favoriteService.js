@@ -3,7 +3,7 @@ import { getSession } from "../db.js";
 export async function addFavorite(userId, movieId) {
   const session = getSession();
   try {
-    console.log("→ Füge Favorit hinzu:", userId, movieId); // Debug
+    console.log("→ Füge Favorit hinzu:", userId, movieId); 
 
     const query = `
       MATCH (u:User {userId: $userId}), (m:Movie {movieId: $movieId})
@@ -18,7 +18,7 @@ export async function addFavorite(userId, movieId) {
 
     return { message: "Favorit gespeichert" };
   } catch (error) {
-    console.error("❌ Fehler bei FAVORITED:", error); // Hier sehen wir den echten Grund
+    console.error("❌ Fehler bei FAVORITED:", error); 
     throw error;
   } finally {
     await session.close();

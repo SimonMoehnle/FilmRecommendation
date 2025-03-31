@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { getSession } from "../db.js";
 
 
-// 🚀 Funktion: Neuen User erstellen
+// Funktion: Neuen User erstellen
 export async function registerUser(name, email, password) {
     const session = getSession();
     try {
@@ -56,7 +56,7 @@ export async function registerUser(name, email, password) {
 export async function deleteUser(userId) {
         const session = getSession();
     try {
-        // ✅ 1. Prüfen, ob der User existiert
+        //1. Prüfen, ob der User existiert
         const userExists = await session.run(
             "MATCH (u:User {userId: toInteger($userId)}) RETURN u",
             { userId }
@@ -66,7 +66,7 @@ export async function deleteUser(userId) {
             return { error: "User nicht gefunden!" };
         }
 
-        // ✅ 2. User mit allen Beziehungen löschen
+        //2. User mit allen Beziehungen löschen
         await session.run(
             "MATCH (u:User {userId: toInteger($userId)}) DETACH DELETE u",
             { userId }
@@ -81,7 +81,7 @@ export async function deleteUser(userId) {
     }
 }
 
-// 🚀 Funktion: Benutzerprofil mit Bewertungen abrufen
+// Funktion: Benutzerprofil mit Bewertungen abrufen
 export async function getUserProfile(userId) {
     const session = getSession();
     try {

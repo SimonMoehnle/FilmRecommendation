@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import userRoutes from "./routes/users.js"; // Importierte Routen
+import userRoutes from "./routes/users.js"; 
 import movieRoutes from "./routes/movies.js";
 import ratingRoutes from "./routes/ratings.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
@@ -11,19 +11,19 @@ import favoriteRoutes from "./routes/favorites.js";
 import logRoutes from "./routes/logs.js"; // Unsere neue Logging-Route
 import { logToFile } from "./utils/logger.js"; // Logging-Funktion importieren
 
-dotenv.config(); // lädt .env Datei
+dotenv.config(); 
 
 const fastify = Fastify({ logger: true });
 
-// ✅ CORS aktivieren und nur Zugriff von Frontend auf Port 4000 erlauben
+// CORS aktivieren und nur Zugriff von Frontend auf Port 4000 erlauben
 fastify.register(cors, {
-  origin: ["http://localhost:3000", "http://localhost:7474"], // Erlaubt Frontend auf Port 3000
+  origin: ["http://localhost:3000"], // Erlaubt Frontend auf Port 3000
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 });
 
-// ✅ JWT-Setup
+// JWT-Setup
 fastify.register(jwt, {
   secret: process.env.JWT_SECRET,
 });
@@ -36,10 +36,10 @@ fastify.register(recommendationRoutes);
 fastify.register(adminRoutes);
 fastify.register(favoriteRoutes);
 
-// ✅ Logging-Routen registrieren
+// Logging-Routen registrieren
 fastify.register(logRoutes);
 
-// 🔁 Automatisches Logging aller API-Routen
+// Automatisches Logging aller API-Routen
 fastify.addHook("onResponse", async (request, reply) => {
   const message = `[${request.method}] ${request.url} → ${reply.statusCode}`;
   logToFile(message, "info", {
@@ -50,7 +50,7 @@ fastify.addHook("onResponse", async (request, reply) => {
   });
 });
 
-// ✅ Server starten
+// Server starten
 const start = async () => {
   try {
     await fastify.listen({ port: 4000, host: "0.0.0.0" });
