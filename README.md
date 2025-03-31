@@ -18,6 +18,9 @@ Anleitung für die Bedienung der DUALISTREAM Website mit Anbindung der Neo4j-Dat
 - Bitte melden Sie sich mit folgenden Admin Anmeldedaten auf der Plattform ein:
     - E-Mail: admin@gmail.com
     - Passwort: admin
+- Beispiel User:
+    - Email: simonmohnle@gmail.com  
+    - Passwort: Hallog4yh!
 - Hier stehen Ihnen erweiterte Funktionialitäten wie z.B. das Admin-Panel, sowie die Einsicht der Server-Logs zur Verfügung. Außerdem beinhaltet die Admin-Rolle zudem erweiterte Berechtigung
   wie z.B. das Anlegen von Filmen, Löschen von Filmen, Einsicht aller User, sowie das Löschen von User-Konten und das vorübergehende Sperren von User-Accounts
 
