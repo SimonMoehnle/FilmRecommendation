@@ -28,7 +28,7 @@ export default async function favoriteRoutes(fastify, options) {
 
   // DELETE /movies/:id/favorite
   fastify.delete('/movies/:id/favorite', {
-    preHandler: [requireAnyRole(["USER", "ADMIN"])] // Authentifizierung und Rollenprüfung
+    preHandler: [requireAnyRole(["ADMIN", "USER"])] // Authentifizierung und Rollenprüfung
   }, async (req, reply) => {
     try {
       const userId = req.user.userId; // Benutzer-ID aus dem Token
@@ -48,42 +48,39 @@ export default async function favoriteRoutes(fastify, options) {
   });
   
   // Route: Favoritenliste eines Benutzers abrufen
-  fastify.get("/favorites/:userId", async (req, reply) => {
+  fastify.get("/favorites/:userId", {
+    preHandler: requireAnyRole(["USER", "ADMIN"]),
+  }, async (req, reply) => {
     const userId = parseInt(req.params.userId, 10);
     const favorites = await getFavoritesOfUser(userId);
     return reply.send({ favorites });
   });
 
   // Neue Route: Film zu Favoritenliste hinzufügen
-  fastify.post("/favorites", async (req, reply) => {
-    const { user } = req; // wird aus Token extrahiert
-    const { movieId } = req.body;
-
-    const favId = `${user.id}-main`; // z. B. statisch "main", oder später auswählbar
-
-    await db.run(
-      `MERGE (u:User {userId: $userId})
-       MERGE (m:Movie {movieId: $movieId})
-       MERGE (f:FavoriteList {id: $favId})
-       MERGE (u)-[:OWNS]->(f)
-       MERGE (f)-[:INCLUDES]->(m)`,
-      { userId: user.id, movieId: Number(movieId), favId }
-    );
-
-    reply.send({ success: true });
+  fastify.post("/favorites", {
+    preHandler: requireAnyRole(["ADMIN", "USER"])
+  }, async (req, reply) => {
+    const { user } = req; // wird aus dem Token extrahiert
+    const { movieId, isPublic } = req.body; // Neuer Parameter isPublic, z.B. true oder false
+    const favId = `${user.id}-main`; // Beispiel-ID, evtl. später erweiterbar
+  
+    try {
+      await db.run(
+        `
+        MERGE (u:User {userId: $userId})
+        MERGE (m:Movie {movieId: $movieId})
+        MERGE (f:FavoriteList {id: $favId})
+        ON CREATE SET f.isPublic = $isPublic
+        MERGE (u)-[:OWNS]->(f)
+        MERGE (f)-[:INCLUDES]->(m)
+        `,
+        { userId: user.id, movieId: Number(movieId), favId, isPublic }
+      );
+      reply.send({ success: true });
+    } catch (error) {
+      console.error("Fehler beim Erstellen der Favoritenliste:", error);
+      reply.code(500).send({ error: "Interner Serverfehler" });
+    }
   });
-
-  // Neue Route: Filme aus einer bestimmten Favoritenliste abrufen
-  fastify.get("/favorites/:userId/:favId", async (req, reply) => {
-    const { userId, favId } = req.params;
-
-    const result = await db.run(
-      `MATCH (u:User {userId: $userId})-[:OWNS]->(f:FavoriteList {id: $favId})-[:INCLUDES]->(m:Movie)
-       RETURN m`,
-      { userId, favId }
-    );
-
-    const movies = result.records.map((r) => r.get("m").properties);
-    reply.send({ movies });
-  });
+  
 }

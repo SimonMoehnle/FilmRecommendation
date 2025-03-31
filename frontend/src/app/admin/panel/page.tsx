@@ -4,10 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
   flexRender,
   ColumnDef,
+  SortingState,
 } from "@tanstack/react-table";
-import { Trash2, Ban, Unlock, Clapperboard } from "lucide-react";
+import { Trash2, Ban, Unlock, Clapperboard, ArrowUp, ArrowDown } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +29,7 @@ export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -50,7 +53,19 @@ export default function AdminPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:4000/users");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Kein Token gefunden. Bitte melde dich an.");
+      }
+      const res = await fetch("http://localhost:4000/users", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const data = await res.json();
       setUsers(data.users);
     } catch (error) {
@@ -62,8 +77,13 @@ export default function AdminPage() {
     if (!confirm("Willst du diesen Benutzer wirklich löschen?")) return;
 
     try {
+      const token = localStorage.getItem("token");
+
       await fetch(`http://localhost:4000/delete/user/${userId}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       setUsers((prev) => prev.filter((u) => u.userId !== userId));
     } catch (err) {
@@ -106,19 +126,22 @@ export default function AdminPage() {
     router.push("/");
   };
 
+  // Spalten-Definition inkl. Sortieroptionen; für die Aktionen-Spalte schalten wir das Sortieren aus
   const columns = useMemo<ColumnDef<User>[]>(() => [
-    { accessorKey: "userId", header: "ID" },
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "E-Mail" },
-    { accessorKey: "role", header: "Rolle" },
+    { accessorKey: "userId", header: "ID", enableSorting: true },
+    { accessorKey: "name", header: "Name", enableSorting: true },
+    { accessorKey: "email", header: "E-Mail", enableSorting: true },
+    { accessorKey: "role", header: "Rolle", enableSorting: true },
     {
       header: "Status",
       accessorFn: (row) => (row.isBlocked ? "Gesperrt" : "Aktiv"),
       id: "status",
+      enableSorting: true,
     },
     {
       header: "Aktionen",
       id: "actions",
+      enableSorting: false,
       cell: ({ row }) => {
         const user = row.original;
         return (
@@ -150,7 +173,10 @@ export default function AdminPage() {
   const table = useReactTable({
     data: users,
     columns,
+    state: { sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -243,9 +269,25 @@ export default function AdminPage() {
                         key={header.id}
                         className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-300 border-b border-gray-700"
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                        {header.isPlaceholder ? null : (
+                          <div
+                            onClick={header.column.getToggleSortingHandler()}
+                            className={
+                              header.column.getCanSort()
+                                ? "cursor-pointer select-none flex items-center"
+                                : ""
+                            }
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {header.column.getIsSorted() === "asc" ? (
+                              <ArrowUp className="w-4 h-4 ml-1" />
+                            ) : header.column.getIsSorted() === "desc" ? (
+                              <ArrowDown className="w-4 h-4 ml-1" />
+                            ) : null}
+                          </div>
                         )}
                       </th>
                     ))}
@@ -275,6 +317,7 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+
         <section className="mt-12">
           <h2 className="text-3xl font-bold mb-6">Genre-Bewertungstrends</h2>
           <GenreTrendChart />

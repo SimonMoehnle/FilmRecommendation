@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useEffect, useState, FormEvent } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { FaRegStar, FaStar } from "react-icons/fa";
 import { Trash } from "lucide-react"; // Lösch-Icon für Admins
 import { toast, Toaster } from "sonner";
-import { useParams } from "next/navigation";
+import { FormEvent } from "react";
 
 export default function HomePage() {
   const [movies, setMovies] = useState([]);
+  const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [groupedMovies, setGroupedMovies] = useState<Record<string, any[]>>({});
@@ -20,26 +21,20 @@ export default function HomePage() {
   const [sortOption, setSortOption] = useState("default");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-  const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
-
-  // States für Film-Erstellung (Admin)
   const [showAddMovieModal, setShowAddMovieModal] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newReleaseYear, setNewReleaseYear] = useState("");
 
+  const router = useRouter();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
-    try {
-      const decoded: any = jwtDecode(token);
-    } catch (err) {
-      console.error("Token konnte nicht dekodiert werden:", err);
-    }
-
+    
+    // Prüfe, ob token vorhanden ist, bevor du es dekodierst
     if (token) {
-      setIsLoggedIn(true);
       try {
         const decoded: any = jwtDecode(token);
         if (decoded?.role) {
@@ -47,17 +42,18 @@ export default function HomePage() {
           console.log("User Role:", decoded.role);
         }
         if (decoded?.userId) {
-          fetchFavoriteIds(token, decoded.userId); // ✅ HIER hinzufügen
+          fetchFavoriteIds(token, decoded.userId);
         }
       } catch (err) {
         console.error("Token konnte nicht dekodiert werden:", err);
       }
-    
+      
+      setIsLoggedIn(true);
       fetchMovies(token);
+      fetchRecommendations(token);
     } else {
       setError("Du musst eingeloggt sein, um Filme anzuzeigen.");
     }
-    
   }, []);
 
   const fetchMovies = async (token: string) => {
@@ -70,7 +66,7 @@ export default function HomePage() {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
 
-      setMovies(data.movies); // erstmal nur setzen
+      setMovies(data.movies);
 
       const genres: Record<string, any[]> = {};
       data.movies.forEach((movie: any) => {
@@ -87,21 +83,37 @@ export default function HomePage() {
     }
   };
 
-    // Lade die Favoriten-IDs des eingeloggten Nutzers
-    const fetchFavoriteIds = async (token, userId) => {
-      try {
-        const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Fehler beim Abrufen der Favoriten");
-        const data = await res.json();
-        // Extrahiere die movieIds aus den Favoriten
-        const favIds = data.favorites.map((movie) => movie.movieId);
-        setFavoriteIds(favIds);
-      } catch (error) {
-        console.error("Fehler beim Abrufen der Favoriten-IDs:", error);
-      }
-    };
+  // Neue Funktion: Empfehlungen abrufen
+  const fetchRecommendations = async (token: string) => {
+    try {
+      const res = await fetch("http://localhost:4000/users/me/recommendations/usercf", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      setRecommendedMovies(data.recommendations);
+    } catch (err) {
+      console.error("Fehler beim Abrufen der Empfehlungen:", err);
+    }
+  };
+
+  // Lade die Favoriten-IDs des eingeloggten Nutzers
+  const fetchFavoriteIds = async (token: string, userId: number) => {
+    try {
+      const res = await fetch(`http://localhost:4000/favorites/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Fehler beim Abrufen der Favoriten");
+      const data = await res.json();
+      // Extrahiere die movieIds aus den Favoriten
+      const favIds = data.favorites.map((movie: any) => movie.movieId);
+      setFavoriteIds(favIds);
+    } catch (error) {
+      console.error("Fehler beim Abrufen der Favoriten-IDs:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -117,12 +129,11 @@ export default function HomePage() {
     const res = await fetch(`http://localhost:4000/movies/${movieId}/favorite`, {
       method,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : "",
       },
     });
 
     if (res.ok) {
-      // Direkt im State anpassen, um UI sofort zu aktualisieren
       setFavoriteIds((prev) =>
         isAlreadyFavorite
           ? prev.filter((id) => id !== movieId)
@@ -145,7 +156,7 @@ export default function HomePage() {
       const res = await fetch(`http://localhost:4000/movies/${movieId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
       });
       if (!res.ok) {
@@ -155,13 +166,19 @@ export default function HomePage() {
         return;
       }
       toast.success("Film wurde erfolgreich gelöscht.");
-      // Nach erfolgreichem Löschen die Filme neu laden
-      fetchMovies(token);
+      
+      // Stelle sicher, dass token vorhanden ist, bevor du fetchMovies aufrufst:
+      if (token) {
+        fetchMovies(token);
+      } else {
+        console.error("Kein gültiger Token vorhanden.");
+      }
     } catch (err) {
       console.error("Fehler beim Löschen:", err);
       toast.error("Fehler beim Löschen des Films.");
     }
   };
+  
 
   // Filter-Funktionalität
   useEffect(() => {
@@ -394,6 +411,65 @@ export default function HomePage() {
               </div>
             )}
           </div>
+          {/* Empfehlung-Sektion */}
+          {recommendedMovies.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-2xl font-semibold mb-6">
+                Filme für dich Vorgeschlagen
+              </h2>
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-red-700 scrollbar-track-transparent">
+                <div className="flex gap-6 pb-4 w-max">
+                  {recommendedMovies.map((movie: any) => (
+                    <div
+                      key={movie.movieId}
+                      className="flex-shrink-0 w-[280px] h-[360px] bg-[#1e2736] rounded-lg border border-red-600 flex flex-col justify-between relative"
+                    >
+                      {/* Favoriten-Stern */}
+                      <div className="relative">
+                        <button
+                          onClick={() => toggleFavorite(movie.movieId)}
+                          className="absolute top-2 right-2 z-10 text-yellow-400 hover:text-yellow-300"
+                        >
+                          {favoriteIds.includes(movie.movieId)
+                            ? <FaStar size={20} />
+                            : <FaRegStar size={20} />}
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="text-xl font-bold text-white mb-2 leading-tight line-clamp-2">
+                          {movie.title}
+                        </h3>
+                        <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                          {movie.description || "Imported from MovieLens"}
+                        </p>
+                        <div className="flex items-center mb-4">
+                          <p className="text-white text-sm">
+                            Bewertung: {movie.averageRating ? movie.averageRating.toFixed(1) : "–"}/5
+                          </p>
+                          <span className="text-yellow-400 ml-2">⭐</span>
+                        </div>
+                      </div>
+                      <div className="p-5 pt-0 flex gap-2 items-center">
+                        <Link href={`/movie/${movie.movieId}`}>
+                          <button className="bg-red-600 text-white py-2 px-4 rounded transition hover:bg-red-700 font-semibold flex-1">
+                            Detailansicht
+                          </button>
+                        </Link>
+                        {userRole === "ADMIN" && (
+                          <button
+                            onClick={() => handleDeleteMovie(movie.movieId)}
+                            className="bg-blue-900 text-white w-12 h-11 flex items-center justify-center rounded transition hover:bg-blue-800"
+                          >
+                            <Trash size={20} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
           {/* Film-Gruppen nach Genre anzeigen */}
           {Object.keys(filteredMovies).map((genre) => (
             <section key={genre} className="mb-10">

@@ -13,8 +13,9 @@ import { requireAnyRole } from "../services/authMiddleware.js";
   
   export default async function movieRoutes(fastify, options) {
     // Route: Alle Filme abrufen
-    // Route: Alle Filme abrufen (ohne Auth)
-    fastify.get("/movies", async (request, reply) => {
+    fastify.get("/movies", {
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
       try {
         const movies = await getAllMovies();
         return reply.send({ movies });
@@ -28,7 +29,9 @@ import { requireAnyRole } from "../services/authMiddleware.js";
     });
   
     // Route: Einzelnen Film anhand der movieId abrufen
-    fastify.get("/movies/:movieId", async (request, reply) => {
+    fastify.get("/movies/:movieId", {
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
       const movieId = parseInt(request.params.movieId, 10); // <<< wichtig!
       try {
         const movie = await getMovieById(movieId);
@@ -46,7 +49,9 @@ import { requireAnyRole } from "../services/authMiddleware.js";
     });
 
     // Route: Filme nach Genre abrufen
-    fastify.get("/movies/genre/:genre", async (request, reply) => {
+    fastify.get("/movies/genre/:genre", {
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
       const { genre } = request.params;
       try {
         const movies = await getMoviesByGenre(genre);
@@ -62,7 +67,10 @@ import { requireAnyRole } from "../services/authMiddleware.js";
 
     
     // Route: Neuen Film erstellen
-    fastify.post("/movies", {schema: createMovieSchema}, async (request, reply) => {
+    fastify.post("/movies", {
+      schema: createMovieSchema,
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
       const { title, genre, description, releaseYear } = request.body;
       if (!title || !description || !releaseYear) {
         return reply.status(400).send({
@@ -82,7 +90,9 @@ import { requireAnyRole } from "../services/authMiddleware.js";
     });
   
     // Route: Bestehenden Film aktualisieren
-    fastify.put("/movies/:movieId", async (request, reply) => {
+    fastify.put("/movies/:movieId", {
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
       const { movieId } = request.params;
       const { title, description, releaseYear } = request.body;
       if (!title || !description || !releaseYear) {
@@ -107,7 +117,7 @@ import { requireAnyRole } from "../services/authMiddleware.js";
   
     // Route: Film löschen
     fastify.delete("/movies/:movieId", {
-      preHandler: requireAnyRole(["ADMIN"])
+      preHandler: requireAnyRole(["ADMIN"])   //Nur Admins dürfen Filme löschen
     }, async (request, reply) => {
       const { movieId } = request.params;
     
@@ -129,7 +139,9 @@ import { requireAnyRole } from "../services/authMiddleware.js";
     });
 
     // Route: Alle Filme löschen
-    fastify.delete("/deleteAllMovies", async (request, reply) => {
+    fastify.delete("/deleteAllMovies", {
+      preHandler: requireAnyRole(["ADMIN"]) // Nur Admins dürfen alle Filme löschen
+    }, async (request, reply) => {
       try {
         const result = await deleteAllMovies();
         return reply.status(200).send(result);

@@ -68,25 +68,25 @@ export async function rateMovie(userId, movieId, score, review) {
 }
 
 
-
-// Funktion: Eine Bewertung löschen
-export async function deleteRating(userId, movieId) {
+export async function getReviews(movieId) {
   const session = driver.session();
   try {
+    // Alle Bewertungen (mit Benutzername, Score, Reviewtext und Zeitstempel) abfragen
     const result = await session.run(
-      `MATCH (u:User {userId: $userId})-[r:RATED]->(m:Movie {movieId: $movieId})
-       DELETE r
-       RETURN count(r) AS deletedCount`,
-       { userId, movieId }
+      `MATCH (u:User)-[r:RATED]->(m:Movie {movieId: $movieId})
+       RETURN u.name AS user, u.userId AS userId, r.score AS score, r.review AS review, r.ratedAt AS ratedAt
+       ORDER BY r.ratedAt DESC`,
+      { movieId }
     );
-    const deletedCount = result.records[0].get("deletedCount").toNumber();
-    if (deletedCount > 0) {
-      return { message: "Bewertung erfolgreich gelöscht." };
-    } else {
-      return { error: "Bewertung nicht gefunden." };
-    }
+    const reviews = result.records.map(record => ({
+      user: record.get("user"),
+      score: record.get("score"),
+      review: record.get("review"),
+      ratedAt: record.get("ratedAt")
+    }));
+    return reviews;
   } catch (error) {
-    console.error("Fehler beim Löschen der Bewertung:", error);
+    console.error("Fehler beim Abrufen der Bewertungen:", error);
     throw error;
   } finally {
     await session.close();

@@ -53,7 +53,9 @@ export default async function adminRoutes(fastify, options) {
   );
   
   // Route zur Abfrage von Genre-Trends für das Admin-Panel
-  fastify.get("/stats/genre-trends", async (request, reply) => {
+  fastify.get("/stats/genre-trends", {
+    preHandler: requireAnyRole(["ADMIN"])
+  }, async (request, reply) => {
     const { range = "30", groupBy = "day" } = request.query;
     const days = parseInt(range.replace("d", ""), 10);
   

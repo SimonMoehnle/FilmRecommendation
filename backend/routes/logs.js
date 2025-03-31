@@ -1,10 +1,13 @@
 import fs from "fs/promises";
 import path from "path";
 import { writeLog } from "../services/writeLog.js";
+import { requireAnyRole } from "../services/authMiddleware.js";
 
 export default async function logRoutes(fastify) {
   // 📝 POST /log → Logs schreiben
-  fastify.post("/log", async (request, reply) => {
+  fastify.post("/log", {
+    preHandler: requireAnyRole(["USER", "ADMIN"])
+  }, async (request, reply) => {
     const { message, level = "info", metadata = {} } = request.body;
 
     try {
@@ -17,7 +20,9 @@ export default async function logRoutes(fastify) {
   });
 
   // 🔎 GET /admin/logs → Logs anzeigen
-  fastify.get("/admin/logs", async (request, reply) => {
+  fastify.get("/admin/logs", {
+    preHandler: requireAnyRole(["ADMIN"])
+  }, async (request, reply) => {
     try {
       // ❗ Optional: Admin-Rollenprüfung einbauen!
       const logPath = path.join(process.cwd(), "logs", "combined.log");

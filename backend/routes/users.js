@@ -6,8 +6,10 @@ import { requireAnyRole } from "../services/authMiddleware.js";
 
 
 export default async function userRoutes(fastify, options) {
-    // GET /users – Alle Nutzer abrufen
-    fastify.get("/users", async (request, reply) => {
+    // GET /users – Alle Nutzer abrufen (Darf nur der Admin!)
+    fastify.get("/users", {
+      preHandler: requireAnyRole(["ADMIN"])
+    }, async (request, reply) => {
         try {
             const users = await getAllUsers(); 
             return reply.send({ users });
@@ -37,8 +39,10 @@ export default async function userRoutes(fastify, options) {
         }
     });
 
-    // DELETE /delete/user/:userId – Nutzer löschen
-    fastify.delete("/delete/user/:userId", async (request, reply) => {
+    // DELETE /delete/user/:userId – Nutzer löschen (Darf nur der Admin!)
+    fastify.delete("/delete/user/:userId", {
+      preHandler: requireAnyRole(["ADMIN"])
+    }, async (request, reply) => {
         const { userId } = request.params;
         try {
             const result = await deleteUser(userId);
@@ -53,7 +57,9 @@ export default async function userRoutes(fastify, options) {
     });
 
     // GET /profile/:userId – Benutzerprofil anzeigen (inkl. Bewertungen)
-    fastify.get("/profile/:userId", async (request, reply) => {
+    fastify.get("/profile/:userId", {
+      preHandler: requireAnyRole(["USER", "ADMIN"])
+    }, async (request, reply) => {
         const { userId } = request.params;
         try {
         const profile = await getUserProfile(userId);

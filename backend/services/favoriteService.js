@@ -1,5 +1,4 @@
 import { getSession } from "../db.js";
-import db from "../db.js";
 
 export async function addFavorite(userId, movieId) {
   const session = getSession();

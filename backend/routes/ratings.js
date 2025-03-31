@@ -1,5 +1,5 @@
 // ratingRoutes.js
-import { rateMovie, deleteRating } from "../services/ratingService.js";
+import { rateMovie, getReviews } from "../services/ratingService.js";
 import { requireAnyRole } from "../services/authMiddleware.js";
 
 export default async function ratingRoutes(fastify, options) {
@@ -42,26 +42,19 @@ export default async function ratingRoutes(fastify, options) {
       }
   });
 
-  // Route: Bewertung löschen
-  fastify.delete("/movies/:movieId/rate", async (request, reply) => {
-    const { movieId } = request.params;
-    const { userId } = request.body;
-    
-    if (!userId) {
-      return reply.status(400).send({ error: "userId ist erforderlich." });
-    }
-    
+  // Route: Bewertungen zu einem Film abrufen
+  fastify.get("/movies/:movieId/reviews", {
+    preHandler: requireAnyRole(["ADMIN", "USER"])       //Bewertung darf nur der Admin löschen
+  }, async (request, reply) => {
+    const movieId = parseInt(request.params.movieId, 10);
     try {
-      const result = await deleteRating(userId, movieId);
-      if (result.error) {
-        return reply.status(404).send(result);
-      }
-      return reply.status(200).send(result);
+      const reviews = await getReviews(movieId);
+      return reply.send({ reviews });
     } catch (error) {
       request.log.error(error);
       return reply.status(500).send({
-        error: "Database error",
-        details: error.message
+        error: "Fehler beim Abrufen der Bewertungen.",
+        details: error.message,
       });
     }
   });

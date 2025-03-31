@@ -46,22 +46,36 @@ export default function GenrePage() {
 
   const fetchMovies = async () => {
     try {
-      const res = await fetch("http://localhost:4000/movies");
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:4000/movies", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+  
+      // Wenn der Status 401 ist, Fehlermeldung "Bitte anmelden!" setzen und Abbruch
+      if (res.status === 401) {
+        setError("Bitte anmelden!");
+        return;
+      }
+  
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
+  
       const data = await res.json();
-
+  
       const topRated = data.movies
         .filter((m: Movie) => typeof m.averageRating === "number")
         .sort((a: Movie, b: Movie) => (b.averageRating ?? 0) - (a.averageRating ?? 0))
         .slice(0, 4);
-
+  
       setMovies(topRated);
     } catch (err) {
       console.error("Fehler beim Abrufen der Filme:", err);
       setError("Filme konnten nicht geladen werden.");
     }
   };
+  
+  
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -152,6 +166,20 @@ export default function GenrePage() {
                           className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
                         >
                           Benutzerkonto verwalten
+                        </button>
+                        <button
+                          onClick={() => {
+                            const token = localStorage.getItem("token");
+                            if (token) {
+                              const decoded: any = jwtDecode(token);
+                              if (decoded?.userId) {
+                                router.push(`/${decoded.userId}/favoritenliste`);
+                              }
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                        >
+                          Meine Favoriten
                         </button>
                         <button
                           onClick={handleLogout}

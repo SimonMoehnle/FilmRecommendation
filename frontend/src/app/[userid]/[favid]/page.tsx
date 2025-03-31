@@ -9,58 +9,81 @@ import { Clapperboard } from "lucide-react";
 export default function FavoritenPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState<any[]>([]);
   const router = useRouter();
-  const params = useParams(); // Direkt am Anfang aufrufen
+  const params = useParams();
+
+  // Normalisiert den Parameter – falls es ein Array ist, wird das erste Element genommen.
+  const normalizeParam = (param: string | string[] | undefined): string | undefined =>
+    Array.isArray(param) ? param[0] : param;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    // Versuche zuerst, die Benutzer-ID aus den URL-Parametern zu erhalten
-    let sharedUserId = params?.userId;
+    // Deklariere sharedUserId als number | undefined
+    let sharedUserId: number | undefined;
 
-    // Falls in der URL keine userId steht, aber ein Token vorhanden ist, hole die userId aus dem Token
-    if (!sharedUserId && token) {
+    // Versuche, sharedUserId aus URL-Parametern zu holen und in eine Zahl zu parsen
+    const param = normalizeParam(params?.userId);
+    if (param !== undefined) {
+      const parsedId = parseInt(param, 10);
+      if (!isNaN(parsedId)) {
+        sharedUserId = parsedId;
+      }
+    }
+
+    // Falls keine gültige userId in der URL vorhanden ist, versuche, sie aus dem Token zu extrahieren
+    if (sharedUserId === undefined && token) {
       try {
         const decoded: any = jwtDecode(token);
-        sharedUserId = decoded.userId;
+        // Falls decoded.userId bereits eine Zahl ist, direkt übernehmen,
+        // ansonsten als String parsen.
+        if (typeof decoded.userId === "number") {
+          sharedUserId = decoded.userId;
+        } else if (typeof decoded.userId === "string") {
+          const parsedId = parseInt(decoded.userId, 10);
+          if (!isNaN(parsedId)) {
+            sharedUserId = parsedId;
+          }
+        }
       } catch (error) {
         console.error("Fehler beim Dekodieren des Tokens:", error);
       }
     }
 
-    // Nur wenn wir eine Benutzer-ID haben, laden wir die Favoriten; ansonsten nur Redirect, wenn gar nichts verfügbar ist.
-    if (sharedUserId !== undefined && sharedUserId !== null) {
-      // Setze den Login-Status basierend auf dem Vorhandensein eines Tokens.
+    if (sharedUserId !== undefined) {
       setIsLoggedIn(!!token);
-      fetchFavorites(sharedUserId, token);
+      fetchFavorites(sharedUserId, token ?? undefined);
     } else {
-      // Wenn weder URL-Parameter noch Token vorhanden sind, redirecte zur Login-Seite.
       router.push("/login");
-    }
+    }    
   }, [params, router]);
 
-  const fetchFavorites = async (userId: string, token?: string) => {
+  const fetchFavorites = async (userId: number, token?: string) => {
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
       const res = await fetch(`http://localhost:4000/favorites/${userId}`, { headers });
-
+  
       if (!res.ok) {
         throw new Error("Fehler beim Abrufen der Favoriten");
       }
-
+  
       const data = await res.json();
-
+  
       // Entferne Duplikate basierend auf der movieId
       const uniqueFavorites = data.favorites.filter(
-        (movie, index, self) =>
+        (movie: any, index: number, self: any[]) =>
           index === self.findIndex((m) => m.movieId === movie.movieId)
       );
-
+  
       setFavorites(uniqueFavorites);
     } catch (error) {
       console.error("Fehler beim Abrufen der Favoriten:", error);
     }
   };
+  
 
   const handleRemoveFavorite = async (movieId: number) => {
     const token = localStorage.getItem("token");
@@ -74,9 +97,8 @@ export default function FavoritenPage() {
 
       if (!res.ok) throw new Error("Fehler beim Entfernen aus Favoriten");
 
-      // Favoritenliste aktualisieren
-      setFavorites((prev) =>
-        prev.filter((movie) => (movie.movieId?.low ?? movie.movieId) !== movieId)
+      setFavorites((prev: any[]) =>
+        prev.filter((movie: any) => (movie.movieId?.low ?? movie.movieId) !== movieId)
       );
     } catch (error) {
       console.error("Fehler beim Entfernen aus Favoriten:", error);
@@ -87,7 +109,6 @@ export default function FavoritenPage() {
     <div className="min-h-screen bg-gradient-to-b from-black via-[#1E0000] to-black text-white">
       {/* Header */}
       <header className="flex items-center justify-between px-8 py-4">
-        {/* Logo */}
         <Link href="/">
           <div className="relative w-[300px] h-[80px]">
             <img
@@ -146,7 +167,6 @@ export default function FavoritenPage() {
                     <button
                       onClick={() => {
                         localStorage.removeItem("token");
-                        setIsLoggedIn(false);
                         router.push("/");
                       }}
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-700"

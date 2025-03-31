@@ -6,49 +6,52 @@ import { getSession } from "../db.js";
 export async function registerUser(name, email, password) {
     const session = getSession();
     try {
-        // ✅ 1. Prüfen, ob die E-Mail bereits existiert
-        const existingUser = await session.run(
-            "MATCH (u:User {email: $email}) RETURN u",
-            { email }
-        );
-
-        if (existingUser.records.length > 0) {
-            return { error: "E-Mail bereits vergeben!" };
-        }
-
-        // ✅ 2. Passwort sicher hashen
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        // ✅ 3. User-ID automatisch generieren
-        const result = await session.run(`
-            MERGE (counter:Counter {id: "userId"}) 
-            ON CREATE SET counter.value = 1 
-            ON MATCH SET counter.value = counter.value + 1 
-            WITH counter.value AS userId
-            CREATE (u:User {
-                userId: userId, 
-                name: $name, 
-                email: $email, 
-                passwordHash: $hashedPassword, 
-                role: "USER", 
-                isBlocked: false
-            })
-            RETURN u.userId AS userId
-        `, { name, email, hashedPassword });
-        
-        const rawUserId = result.records[0].get("userId");
-        return { 
-            message: "User erfolgreich registriert!", 
-            userId: rawUserId?.low ?? rawUserId
-        };
+      // 1. Prüfen, ob die E-Mail bereits existiert
+      const existingUser = await session.run(
+        "MATCH (u:User {email: $email}) RETURN u",
+        { email }
+      );
+  
+      if (existingUser.records.length > 0) {
+        return { error: "E-Mail bereits vergeben!" };
+      }
+  
+      // 2. Passwort sicher hashen
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+      // 3. Neue User-ID basierend auf der letzten existierenden User-ID berechnen
+      const result = await session.run(
+        `
+        MATCH (u:User)
+        WITH coalesce(max(u.userId), 0) AS lastUserId
+        WITH lastUserId + 1 AS newUserId
+        CREATE (u:User {
+            userId: newUserId, 
+            name: $name, 
+            email: $email, 
+            passwordHash: $hashedPassword, 
+            role: "USER", 
+            isBlocked: false
+        })
+        RETURN u.userId AS userId
+        `,
+        { name, email, hashedPassword }
+      );
+  
+      const rawUserId = result.records[0].get("userId");
+      return {
+        message: "User erfolgreich registriert!",
+        userId: rawUserId?.low ?? rawUserId,
+      };
     } catch (error) {
-        console.error("Fehler bei der Registrierung:", error);
-        throw error;
+      console.error("Fehler bei der Registrierung:", error);
+      throw error;
     } finally {
-        await session.close();
+      await session.close();
     }
-}
+  }
+  
 
 export async function deleteUser(userId) {
         const session = getSession();
