@@ -11,13 +11,34 @@ export default function FavoritenPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
   const router = useRouter();
-  const params = useParams();
-
-  // Normalisiert den Parameter – falls es ein Array ist, wird das erste Element genommen.
-  const normalizeParam = (param: string | string[] | undefined): string | undefined =>
-    Array.isArray(param) ? param[0] : param;
+  const params = useParams(); // Direkt am Anfang aufrufen
 
   useEffect(() => {
+    // Wenn eine userId in der URL vorhanden ist, handelt es sich um einen Shared-Link.
+    const urlUserId = params?.userId;
+    if (urlUserId) {
+      // Im Shared-Modus: Verwende den URL-Parameter und setze den Default-FavId.
+      const sharedFavId = `${urlUserId}-main`;
+      // Setze den Login-Status nicht über den Token – wir fordern hier eine öffentliche Abfrage.
+      setIsLoggedIn(false);
+      fetchFavorites(urlUserId, sharedFavId, undefined);
+    } else {
+      // Falls keine userId in der URL vorhanden ist, arbeite wie bisher mit Token.
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded: any = jwtDecode(token);
+          const sharedUserId = decoded.userId;
+          const sharedFavId = `${sharedUserId}-main`;
+          setIsLoggedIn(true);
+          fetchFavorites(sharedUserId, sharedFavId, token);
+        } catch (error) {
+          console.error("Fehler beim Dekodieren des Tokens:", error);
+        }
+      } else {
+        router.push("/login");
+      }
+    }
     const token = localStorage.getItem("token");
     // Deklariere sharedUserId als number | undefined
     let sharedUserId: number | undefined;
