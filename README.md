@@ -2,7 +2,7 @@ Anleitung für die Bedienung der DUALISTREAM Website mit Anbindung der Neo4j-Dat
 
 1. Voraussetzung:
 - Node (Version "v22.14.0") und Node-Package-Manager (Version "11.2.0")
-- Docker-Desktop
+- Docker-Desktop v4.39.0
 - Bitte den Branch "Main" Nutzen, diese hat den aktuellen Stand!
 
 2. Starten der Anwendung:
